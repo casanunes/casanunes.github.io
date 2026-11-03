@@ -515,7 +515,8 @@ async function loadAll(){
   S.cpag=cg.map(r=>fr(r,CPM));S.atac=av.map(r=>fr(r,AM)).sort((a,b)=>a.n-b.n);S.sales.sort((a,b)=>a.n-b.n);S.orc.sort((a,b)=>a.n-b.n);snapAll();return true;
  }catch(e){toast('Erro ao carregar: '+(e.message||e),5000);return false}
 }
-function SYNC(){SQ=SQ.then(syncGo).catch(e=>toast('Erro ao salvar: '+(e.message||e),5000));return SQ}
+let PEND=0,SERR=0;
+function SYNC(){PEND++;SQ=SQ.then(syncGo).then(()=>{SERR=0}).catch(e=>{SERR=1;toast('ERRO AO SALVAR (não feche nem atualize a página): '+(e.message||e),20000)}).finally(()=>{PEND--});return SQ}
 const ck=r=>{if(r.error)throw r.error;return r.data};
 async function syncGo(){
  if(!CU)return;
@@ -1344,8 +1345,8 @@ if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.ser
 async function checaVersao(){try{const r=await fetch('version.json?'+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(j.v&&j.v!==APP_VER)$('nv').style.display='flex'}catch(e){}}
 checaVersao();setInterval(checaVersao,300000);
 // atualização entre lojas: a cada 45 s, se a pessoa não estiver no meio de algo
-async function aoVivo(){if(document.hidden||!CU||$('modal').classList.contains('on')||acart.length||(typeof cart!=='undefined'&&cart&&cart.items&&cart.items.length))return;
- try{await SQ;const antes=document.activeElement&&document.activeElement.tagName;if(antes==='INPUT'||antes==='SELECT'||antes==='TEXTAREA')return;if(await loadAll())render()}catch(e){}}
+async function aoVivo(){if(document.hidden||!CU||$('modal').classList.contains('on')||acart.length||PEND>0||SERR||(typeof cart!=='undefined'&&cart&&(cart.items.length||cart.cli||(cart.nc&&(cart.nc.n||cart.nc.tel)))))return;
+ try{await SQ;if(PEND>0||SERR)return;const antes=document.activeElement&&document.activeElement.tagName;if(antes==='INPUT'||antes==='SELECT'||antes==='TEXTAREA')return;if(await loadAll())render()}catch(e){}}
 setInterval(aoVivo,45000);
 </script>
 </body>
