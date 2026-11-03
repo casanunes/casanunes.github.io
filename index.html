@@ -466,7 +466,7 @@ let S,CU=null,SL=null;
 // ===== Casa Nunes · camada Supabase (login, carregar e salvar no banco) =====
 const SBURL='https://nhnkvszkfpjfcvksacma.supabase.co',SBKEY='sb_publishable_X8Tezdcn6uqNGDjdQst0-g_vZ1uBn0Z',DOM='@casanunes.local';
 const SB=supabase.createClient(SBURL,SBKEY);
-const to=(o,m)=>{const r={};m.forEach(p=>{const[a,b]=p.split(':');if(o[a]!==undefined)r[b]=o[a]});return r};
+const to=(o,m)=>{const r={};m.forEach(p=>{const[a,b]=p.split(':');if(o[a]!==undefined)r[b]=(o[a]===''&&/_id$/.test(b))?null:o[a]});return r};
 const fr=(r,m)=>{const o={};m.forEach(p=>{const[a,b]=p.split(':');if(r[b]!==undefined&&r[b]!==null)o[a]=r[b]});return o};
 const PM=['id:id','n:nome','cat:categoria','f:fornecedor_id','p:preco','q:qtd','min:minimo','img:foto','pa:preco_atacado'],FM=['id:id','n:nome','tel:tel','prazo:prazo'],VM=['id:id','n:nome','loja:loja'],
 CLM=['id:id','n:nome','tel:tel','cid:cidade','end:endereco','loja:loja','vend:vendedor_id','pv:parcela_valor'],XM=['id:id','n:nome','v:valor','loja:loja','t:tipo','d:data'],GM=['id:id','d:data','loja:loja','v:valor','n:motivo','u:usuario'],
@@ -1349,7 +1349,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['admin']].some(t=>t[0]===h0))
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611031300';
+const APP_VER='202611031330';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
