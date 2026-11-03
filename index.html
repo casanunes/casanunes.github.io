@@ -604,15 +604,21 @@ function totals(k,l=loja){
 }
 function feeOf(s){const r=S.cfg.tx,pc=s.pag==='Pix'?r.pix:s.pag==='Cartão de débito'?r.deb:s.pag==='Cartão de crédito'?(s.parc<=1?r.c1:s.parc<=6?r.c6:r.c12):0;return s.v*(+pc||0)/100}
 const fee=s=>s.fee!=null?s.fee:feeOf(s);
-function payTxt(s){if(s.pag==='Carnê'){const n=s.parcs?s.parcs.length:s.parc,v=s.parcs&&s.parcs[0]?s.parcs[0].v:s.v/s.parc;return 'Carnê '+(s.entr?'com entrada de '+R(s.entr)+' + ':'')+n+'x de '+R(v)}if(s.pag==='Cartão de crédito'&&s.parc>1)return 'Cartão de crédito em '+s.parc+'x de '+R(s.v/s.parc);return s.pag}
+function payTxt(s){if(s.pag==='Carnê'){const n=s.parcs?s.parcs.length:s.parc,v=s.parcs&&s.parcs[0]?s.parcs[0].v:s.v/s.parc;const ul=s.parcs&&s.parcs.length>1?s.parcs[s.parcs.length-1].v:v;return 'Carnê '+(s.entr?'entrada de '+R(s.entr)+' + ':'')+(n>1&&Math.abs(ul-v)>0.009?(n-1)+'x de '+R(v)+' + última de '+R(ul):n+'x de '+R(v))}if(s.pag==='Cartão de crédito'&&s.parc>1)return 'Cartão de crédito em '+s.parc+'x de '+R(s.v/s.parc);return s.pag}
 const hhmm=()=>{const n=new Date();return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')};
 function logA(s,a){(s.log=s.log||[]).push({d:hoje(),h:hhmm(),u:CU?CU.n:'',a})}
 const first=n=>String(n||'').split(' ')[0];
 function waUrl(tel,txt){let d=String(tel||'').replace(/\D/g,'');if(d&&d.length<=11)d='55'+d;return 'https://wa.me/'+d+'?text='+encodeURIComponent(txt)}
 const waBtn=(tel,txt,lab='WhatsApp',cls='btn wa sm')=>`<a class="${cls}" href="${waUrl(tel,txt)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${ic('wa')}${lab}</a>`;
-function msgPed(s){const c=C(s.cli),orc=s.tipo==='orc';return `Olá, ${first(c.n)}! Aqui é da ${S.store.nome} (${s.loja}).\n\n*${orc?'Orçamento':'Pedido'} nº ${String(s.n).padStart(5,'0')}* · ${br(s.d)}\n`+s.items.map(i=>`• ${i.q}x ${P(i.prod).n} · ${R(i.q*i.u)}`).join('\n')+(s.desc?`\nDesconto: - ${R(s.desc)}`:'')+`\n\n*Total: ${R(s.v)}*\n${orc?'Condição':'Pagamento'}: ${payTxt(s)}`+(s.parcs&&s.parcs.length?`\nParcelas: `+s.parcs.map(p=>`${p.k}ª ${brs(p.venc)}`).join(', '):'')+(s.ent?`\nEntrega: ${s.ent.end?s.ent.end+', ':''}${s.ent.cid} · previsão ${br(s.ent.d)}`:'')+(orc?`\n\nOrçamento válido até ${br(s.val)}.`:'')+`\n\nObrigado pela preferência!`}
+function msgPed(s){const c=C(s.cli),orc=s.tipo==='orc',N=String(s.n).padStart(5,'0'),nm=S.store.nome||'Casa Nunes';
+ let t=`Olá, ${first(c.n)}! 😊\n`+(orc?`Aqui é da *${nm}*. Segue o orçamento que você pediu:`:`Obrigado por comprar na *${nm}*.`)+`\n\n🧾 *${orc?'Orçamento':'Pedido'} nº ${N}* · ${br(s.d)}\n\n*Produtos*\n`+s.items.map(i=>`• ${i.q}x ${P(i.prod).n} — ${R(i.q*i.u)}`).join('\n')+(s.desc?`\nDesconto: - ${R(s.desc)}`:'')+`\n\n*Total: ${R(s.v)}*\n\n💳 *${orc?'Condição':'Pagamento'}:* ${payTxt(s)}`;
+ if(s.parcs&&s.parcs.length)t+=`\n📅 1º vencimento: ${br(s.parcs[0].venc)} (todo dia ${+s.parcs[0].venc.slice(8)})`;
+ if(s.ent)t+=`\n\n🚚 *Entrega:* ${s.ent.end?s.ent.end+', ':''}${s.ent.cid}\nPrevisão: ${br(s.ent.d)}`;
+ t+=orc?`\n\n⏳ Orçamento válido até ${br(s.val)}.`:'';
+ t+=`\n\nSegue o PDF do ${orc?'orçamento':'seu pedido'} em anexo.\nQualquer dúvida é só responder aqui! 🏠`;return t}
 function msgEnt(s){const c=C(s.cli);return `Olá, ${first(c.n)}! Aqui é da ${S.store.nome}. Sua entrega do pedido nº ${String(s.n).padStart(5,'0')} (${dsc(s)}) está prevista para ${br(s.ent.d)}, no endereço ${s.ent.end?s.ent.end+', ':''}${s.ent.cid}. Vai ter alguém pra receber? Qualquer coisa é só responder aqui.`}
-function msgParc(s,p){const c=C(s.cli);return `Olá, ${first(c.n)}! Aqui é da ${S.store.nome}. Passando pra lembrar da parcela ${p.k}/${s.parcs.length} do seu carnê (pedido nº ${String(s.n).padStart(5,'0')}), no valor de ${R(p.v)}, com vencimento em ${br(p.venc)}. Se já pagou, pode desconsiderar. Obrigado!`}
+function msgParc(s,p){const c=C(s.cli),ps=(s.parcs||[]).filter(x=>!x.canc),pago=ps.reduce((a,x)=>a+paidOf(x),0),falta=ps.reduce((a,x)=>a+prem(x),0),o=ps.find(x=>x.k===p.k),val=o&&prem(o)>0?prem(o):p.v;
+ return `Olá, ${first(c.n)}! Tudo bem? 😊\nAqui é da *${S.store.nome||'Casa Nunes'}*.\n\nPassando para lembrar do seu carnê (pedido nº ${String(s.n).padStart(5,'0')}):\n\n📌 *Parcela ${p.k} de ${ps.length}:* ${R(val)}\n📅 Vencimento: ${br(p.venc)}\n`+(pago>0.004?`💰 Já pago: ${R(pago)}\n`:'')+`🔎 Falta no total: ${R(falta)}\n\nSe já pagou, pode desconsiderar.\nSe precisar combinar outra data ou valor, é só me avisar. Obrigado! 🙏`}
 function prevK(k,n=1){const d=new Date(+k.slice(0,4),+k.slice(5)-1-n,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
 const mlabel=k=>MESL[+k.slice(5)-1]+' de '+k.slice(0,4);
 const pct=(a,b)=>b?(a-b)/Math.abs(b)*100:null;
@@ -807,7 +813,7 @@ function orcCard(o){const c=C(o.cli),venc=o.val<hoje();
   <div class="od"><span>${dlong(o.d)}</span><span>${H(VD(o.vend).n)}</span></div>${itTbl(o)}
   <div class="otot"><span>Total <span class="mut" style="font-weight:500">· ${PAGS[o.pag]}${o.parc>1?' '+o.parc+'x':''}</span></span><b>${R(o.v)}</b></div>
   <div class="ob"><button class="btn light sm" onclick="verVia('${o.id}')">${ic('print','width:15px;height:15px')}Ver / imprimir</button><button class="btn acc sm" onclick="orcVenda('${o.id}')">${ic('check','width:15px;height:15px')}Virar venda</button></div>
-  <div class="ob2">${waBtn(c.tel,msgPed(o),'Mandar no WhatsApp')}<button class="btn line" onclick="S.orc=S.orc.filter(x=>x.id!=='${o.id}');save();render();toast('Orçamento apagado')">${ic('trash','width:14px;height:14px')}Apagar</button></div></div>`}
+  <div class="ob2"><button class="btn wa sm" onclick="zapPed('${o.id}')">${ic('wa')}Mandar no WhatsApp + PDF</button><button class="btn line" onclick="S.orc=S.orc.filter(x=>x.id!=='${o.id}');save();render();toast('Orçamento apagado')">${ic('trash','width:14px;height:14px')}Apagar</button></div></div>`}
 function filtCards(q){q=q.toLowerCase();document.querySelectorAll('#orders .oc').forEach(e=>e.style.display=e.dataset.q.includes(q)?'':'none')}
 function entregue(id){const s=S.sales.find(x=>x.id===id);s.ent.st='Entregue';s.ent.d=hoje();logA(s,'Entrega concluída');save();render();toast('Entrega concluída')}
 function fCanc(id){const s=S.sales.find(x=>x.id===id);
@@ -1230,8 +1236,14 @@ function viaHTML(s){
  <div class="ppf">${orc?`<b>Orçamento válido até ${br(s.val)}.</b> Depois dessa data os preços podem mudar.<br>`:''}${H(st.msg)}<br>Este documento não tem valor fiscal.</div></div></div>`;
 }
 
+async function zapPed(id){const s=S.sales.find(x=>x.id===id)||S.orc.find(x=>x.id===id);if(!s)return;const c=C(s.cli),txt=msgPed(s),nome=`${s.tipo==='orc'?'Orcamento':'Pedido'}-${String(s.n).padStart(5,'0')}-CasaNunes.pdf`;
+ let blob;try{blob=viaPDF(s)}catch(e){window.open(waUrl(c.tel,txt),'_blank');return toast('Não deu pra gerar o PDF, abri só o texto',4000)}
+ const f=new File([blob],nome,{type:'application/pdf'});
+ try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text:txt,title:nome});return}}catch(e){if(e&&e.name==='AbortError')return}
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),20000);
+ window.open(waUrl(c.tel,txt),'_blank');toast('PDF baixado. Arraste ele para a conversa do WhatsApp que abriu',8000)}
 function verVia(id,nova){const s=S.sales.find(x=>x.id===id)||S.orc.find(x=>x.id===id);if(!s)return;const orc=s.tipo==='orc';
- modal(`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap"><h2 style="margin:0">${nova==='orc'?'Orçamento salvo ✓':nova?'Venda finalizada ✓':orc?'Orçamento':'Via do cliente'}</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn light" onclick="close_()">Fechar</button>${waBtn(C(s.cli).tel,msgPed(s),'WhatsApp','btn wa')}<button class="btn acc" id="pbtn" onclick="imprimir('${id}')">${ic('print')}Imprimir</button></div></div>${viaHTML(s)}`,true);
+ modal(`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap"><h2 style="margin:0">${nova==='orc'?'Orçamento salvo ✓':nova?'Venda finalizada ✓':orc?'Orçamento':'Via do cliente'}</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn light" onclick="close_()">Fechar</button><button class="btn wa" onclick="zapPed('${id}')">${ic('wa')}WhatsApp + PDF</button><button class="btn acc" id="pbtn" onclick="imprimir('${id}')">${ic('print')}Imprimir</button></div></div>${viaHTML(s)}`,true);
 }
 function exportCSV(k){
  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"',n=v=>(+v||0).toFixed(2).replace('.',',');let rows=[];
@@ -1336,7 +1348,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['admin']].some(t=>t[0]===h0))
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611031215';
+const APP_VER='202611031240';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
