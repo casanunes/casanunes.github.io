@@ -718,7 +718,7 @@ function totals(k,l=loja){
 }
 function feeOf(s){const r=S.cfg.tx,pc=s.pag==='Pix'?r.pix:s.pag==='Cartão de débito'?r.deb:s.pag==='Cartão de crédito'?(s.parc<=1?r.c1:s.parc<=6?r.c6:r.c12):0;return s.v*(+pc||0)/100}
 const fee=s=>s.fee!=null?s.fee:feeOf(s);
-function payTxt(s){if(s.pag==='Carnê'){const n=s.parcs?s.parcs.length:s.parc,v=s.parcs&&s.parcs[0]?s.parcs[0].v:s.v/s.parc;const ul=s.parcs&&s.parcs.length>1?s.parcs[s.parcs.length-1].v:v;return 'Carnê '+(s.entr?'entrada de '+R(s.entr)+' + ':'')+(n>1&&Math.abs(ul-v)>0.009?(n-1)+'x de '+R(v)+' + última de '+R(ul):n+'x de '+R(v))}if(s.pag==='Cartão de crédito'&&s.parc>1)return 'Cartão de crédito em '+s.parc+'x de '+R(s.v/s.parc);return s.pag}
+function payTxt(s){if(s.pag==='Carnê'){const PC=(s.parcs||[]).filter(p=>!p.canc),n=PC.length||s.parc,v=PC[0]?PC[0].v:s.v/s.parc;const ul=PC.length>1?PC[PC.length-1].v:v;return 'Carnê '+(s.entr?'entrada de '+R(s.entr)+' + ':'')+(n>1&&Math.abs(ul-v)>0.009?(n-1)+'x de '+R(v)+' + última de '+R(ul):n+'x de '+R(v))}if(s.pag==='Cartão de crédito'&&s.parc>1)return 'Cartão de crédito em '+s.parc+'x de '+R(s.v/s.parc);return s.pag}
 const hhmm=()=>{const n=new Date();return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')};
 function logA(s,a){(s.log=s.log||[]).push({d:hoje(),h:hhmm(),u:CU?CU.n:'',a})}
 const first=n=>String(n||'').split(' ')[0];
@@ -726,7 +726,7 @@ function waUrl(tel,txt){let d=String(tel||'').replace(/\D/g,'');if(d&&d.length<=
 const waBtn=(tel,txt,lab='WhatsApp',cls='btn wa sm')=>`<a class="${cls}" href="${waUrl(tel,txt)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${ic('wa')}${lab}</a>`;
 function msgPed(s){const c=C(s.cli),orc=s.tipo==='orc',N=String(s.n).padStart(5,'0'),nm=S.store.nome||'Casa Nunes';
  let t=`Olá, ${first(c.n)}! 😊\n`+(orc?`Aqui é da *${nm}*. Segue o orçamento que você pediu:`:`Obrigado por comprar na *${nm}*.`)+`\n\n🧾 *${orc?'Orçamento':'Pedido'} nº ${N}* · ${br(s.d)}\n\n*Produtos*\n`+s.items.map(i=>`• ${i.q}x ${P(i.prod).n} — ${R(i.q*i.u)}`).join('\n')+(s.desc?`\nDesconto: - ${R(s.desc)}`:'')+`\n\n*Total: ${R(s.v)}*\n\n💳 *${orc?'Condição':'Pagamento'}:* ${payTxt(s)}`;
- if(s.parcs&&s.parcs.length)t+=`\n📅 1º vencimento: ${br(s.parcs[0].venc)} (todo dia ${+s.parcs[0].venc.slice(8)})`;
+ {const PC=(s.parcs||[]).filter(p=>!p.canc);if(PC.length)t+=`\n📅 1º vencimento: ${br(PC[0].venc)} (todo dia ${+PC[0].venc.slice(8)})`}
  if(s.ent)t+=`\n\n🚚 *Entrega:* ${s.ent.end?s.ent.end+', ':''}${s.ent.cid}\nPrevisão: ${br(s.ent.d)}`;
  t+=orc?`\n\n⏳ Orçamento válido até ${br(s.val)}.`:'';
  t+=`\n\nSegue o PDF do ${orc?'orçamento':'seu pedido'} em anexo.\nQualquer dúvida é só responder aqui! 🏠`;return t}
@@ -846,11 +846,12 @@ function drawCart(){
  ${cart.items.map((i,k)=>{const p=P(i.prod);return `<div class="ci">${pArt(p,'th')}<div><div class="nm">${H(p.n)}</div><div class="sub"><div class="qty"><button onclick="cq(${k},-1)">−</button><span>${i.q}</span><button onclick="cq(${k},1)">+</button></div><input class="pr" type="number" value="${i.u}" onchange="cart.items[${k}].u=+this.value||0;drawCart()"></div></div><div><div class="tot">${R(i.q*i.u)}</div><button class="x" style="float:right" onclick="cart.items.splice(${k},1);drawProds();drawCart()">${ic('x','width:14px;height:14px')}</button></div></div>`}).join('')||'<div class="empty" style="padding:20px">Toque nos produtos pra adicionar<br><button class="btn acc sm mobonly" style="margin-top:12px" onclick="hideCart()">← Escolher os produtos</button></div>'}
  <div class="sumbox"><p><span>Subtotal</span><span>${R(sub)}</span></p><p><span>Desconto (R$)</span><input type="number" value="${cart.desc||''}" placeholder="0,00" oninput="cart.desc=+this.value||0;updTot()"></p><p class="tt"><span>Total</span><b id="ctot">${R(tot)}</b></p></div>
  <label>Pagamento</label><div class="pays">${PAG.map(p=>`<button class="pay ${cart.pag===p?'on':''}" onclick="cart.pag='${p}';drawCart()">${PAGS[p]}</button>`).join('')}</div>
- ${PARC.includes(cart.pag)?`<label>Parcelas</label><select onchange="cart.parc=+this.value;cart.pv=0;drawCart()">${Array.from({length:cart.pag==='Carnê'?36:12},(_,i)=>`<option value="${i+1}" ${cart.parc===i+1?'selected':''}>${i+1}x</option>`).join('')}</select>`:''}
+ ${PARC.includes(cart.pag)&&cart.pag!=='Carnê'?`<label>Parcelas</label><select onchange="cart.parc=+this.value;cart.pv=0;drawCart()">${Array.from({length:cart.pag==='Carnê'?36:12},(_,i)=>`<option value="${i+1}" ${cart.parc===i+1?'selected':''}>${i+1}x</option>`).join('')}</select>`:''}
  ${cart.pag==='Carnê'?`<div class="two"><div><label>Entrada (R$)</label><input type="number" value="${cart.entr||''}" placeholder="0,00" onchange="cart.entr=+this.value||0;drawCart()"></div><div><label>Entrada paga em</label><select onchange="cart.entrPag=this.value">${['Dinheiro','Pix','Cartão de débito'].map(x=>`<option ${cart.entrPag===x?'selected':''}>${x}</option>`).join('')}</select></div></div>
  <label>1º vencimento</label><input type="date" value="${cart.venc1}" onchange="cart.venc1=this.value;drawCart()">
- <label>Valor de cada parcela (R$)</label><input type="number" step="0.01" value="${cart.pv||''}" placeholder="${r2(Math.max(0,tot-(cart.entr||0))/cart.parc)}" onchange="cart.pv=+this.value||0;if(cart.pv>0){cart.parc=Math.max(1,Math.ceil(r2(Math.max(0,tot-(cart.entr||0))/cart.pv)))}drawCart()">
- <div class="mut" style="margin-top:6px">${(()=>{const rest=Math.max(0,tot-(cart.entr||0));if(cart.pv>0){const ps=genParcsV(rest,cart.pv,cart.venc1||hoje());const l=ps[ps.length-1];return ps.length+'x · '+(ps.length>1?(ps.length-1)+'x de <b style="color:var(--ink)">'+R(cart.pv)+'</b> + última de <b style="color:var(--ink)">'+R(l?l.v:0)+'</b>':'<b style="color:var(--ink)">'+R(l?l.v:0)+'</b>')}return cart.parc+'x de <b style="color:var(--ink)">'+R(rest/cart.parc)+'</b>'})()} · todo dia ${+cart.venc1.slice(8)}</div>`:''}
+ <label>Valor de cada parcela (R$) <span class="mut">· fica fixo, não muda sozinho</span></label><input type="number" step="0.01" value="${cart.pv||''}" placeholder="Ex.: 200" onchange="cart.pv=+this.value||0;drawCart()">
+ <div class="mut" style="margin-top:6px">${(()=>{const rest=Math.max(0,tot-(cart.entr||0));if(cart.pv>0){const ps=genParcsV(rest,cart.pv,cart.venc1||hoje());const l=ps[ps.length-1],n=ps.length,f=n>1?(n-1)+(l.v/cart.pv):l.v/cart.pv;return 'Falta pagar <b style="color:var(--ink)">'+R(rest)+'</b>: '+(n>1?(n-1)+'x de <b style="color:var(--ink)">'+R(cart.pv)+'</b> + última de <b style="color:var(--ink)">'+R(l.v)+'</b>':'<b style="color:var(--ink)">'+R(l.v)+'</b> em 1 parcela')+' ('+(Math.round(f*10)/10).toString().replace('.',',')+' parcelas)'}return 'Digite o valor da parcela acima. Ou, se preferir dividir igual, escolha o número de parcelas abaixo.'})()} · todo dia ${+cart.venc1.slice(8)}</div>
+ ${cart.pv>0?'':`<label>Ou dividir igualmente em</label><select onchange="cart.parc=+this.value;drawCart()">${Array.from({length:36},(_,i)=>`<option value="${i+1}" ${cart.parc===i+1?'selected':''}>${i+1}x de ${R(Math.max(0,tot-(cart.entr||0))/(i+1))}</option>`).join('')}</select>`}`:''}
  ${cart.pag!=='Carnê'&&fee({v:tot,pag:cart.pag,parc:cart.parc})>0?`<div class="mut" style="margin-top:6px">Taxa da maquininha: ${R(fee({v:tot,pag:cart.pag,parc:cart.parc}))}</div>`:''}
  <div class="sw" onclick="cart.ent=!cart.ent;drawCart()"><span>Entregar na casa do cliente</span><span class="tog ${cart.ent?'on':''}"></span></div>
  ${cart.ent?`<div class="two"><div><label>Cidade</label><select onchange="cart.cid=this.value">${CIDADES.map(c=>`<option ${cart.cid===c?'selected':''}>${c}</option>`).join('')}</select></div><div><label>Data</label><input type="date" value="${cart.dEnt}" onchange="cart.dEnt=this.value"></div></div><label>Endereço</label><input placeholder="Rua, número, bairro" value="${H(cart.end)}" onchange="cart.end=this.value">`:''}
@@ -874,7 +875,7 @@ function finalizar(){
  const cli=cliFromCart();if(!cli)return;
  const s={id:uid(),n:Math.max(0,...S.sales.map(s=>s.n))+1,d:hoje(),h:hhmm(),cli,vend:cart.vend,loja:cart.loja,items:cart.items.map(i=>({...i})),desc:dc,v:tot,pag:cart.pag,parc:PARC.includes(cart.pag)?cart.parc:1,obs:cart.obs,
   ent:cart.ent?{cid:cart.cid,end:cart.end,d:cart.dEnt||hoje(),st:'Agendada'}:null};
- if(s.pag==='Carnê'){s.entr=+cart.entr||0;s.entrPag=cart.entrPag;s.parcs=cart.pv>0?genParcsV(tot-s.entr,cart.pv,cart.venc1||addM(hoje(),1)):genParcs(tot-s.entr,s.parc,cart.venc1||addM(hoje(),1));s.parc=s.parcs.length}
+ if(s.pag==='Carnê'){s.entr=+cart.entr||0;s.entrPag=cart.entrPag;s.parcs=cart.pv>0?genParcsV(tot-s.entr,cart.pv,cart.venc1||addM(hoje(),1)):genParcs(tot-s.entr,s.parc,cart.venc1||addM(hoje(),1));s.parc=s.parcs.length;{const cc=S.cli.find(x=>x.id===cli);if(cc&&cart.pv>0)cc.pv=cart.pv}}
  s.fee=feeOf(s);logA(s,'Venda feita');
  S.sales.push(s);s.items.forEach(i=>{const p=S.prod.find(p=>p.id===i.prod);if(p)p.q=Math.max(0,p.q-i.q)});
  const c=S.cli.find(c=>c.id===cli);if(c&&cart.ent){c.cid=cart.cid;if(cart.end)c.end=cart.end}
@@ -1025,7 +1026,7 @@ V.carne=()=>{
   (dev.map(({s,falta,atv,old,adi,ult,prox,pagoT,tot})=>{const c=C(s.cli),pr={...prox,v:prem(prox)};
    const sit=atv>0?`<span class="st bad">${R(atv)} em atraso</span><div class="mut">há ${atrasoTxt(old)}</div>`:adi.length?`<span class="st wa">Adiado</span>`:`<span class="st ok">Em dia</span>`;
    return `<tr><td><b>${H(c.n)}</b><div class="mut">${H(c.tel)}</div></td><td class="mut">#${String(s.n).padStart(5,'0')} · ${s.loja}</td><td class="r">${R(c.pv>0?c.pv:prox.v)}<div class="mut">${c.pv>0?'combinada':'por mês'}</div></td><td class="r">${R(pagoT)}<div class="mut">de ${R(tot)}</div></td><td class="r"><b>${R(falta)}</b></td><td>${sit}</td><td>${ult?br(ult):'—'}</td>
-   <td class="r" style="white-space:nowrap">${waBtn(c.tel,msgParc(s,pr),'Cobrar')} <button class="btn dark sm" onclick="fReceber('${s.id}')">Receber</button> ${atv>0?`<button class="btn light sm" onclick="fAdiar('${s.id}')">Adiar</button>`:adi.length?`<button class="btn light sm" onclick="tirarAdi('${s.id}')">Tirar adiamento</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty">Nenhum carnê com valor em aberto</td></tr>');
+   <td class="r" style="white-space:nowrap">${waBtn(c.tel,msgParc(s,pr),'Cobrar')} <button class="btn dark sm" onclick="fReceber('${s.id}')">Receber</button> <button class="btn light sm" onclick="fReparc('${s.id}')">Parcela</button> ${atv>0?`<button class="btn light sm" onclick="fAdiar('${s.id}')">Adiar</button>`:adi.length?`<button class="btn light sm" onclick="tirarAdi('${s.id}')">Tirar adiamento</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty">Nenhum carnê com valor em aberto</td></tr>');
  }else{
   const list=[...F[cur][1]].sort((a,b)=>cur==='pagas'?b.p.pago.localeCompare(a.p.pago):a.p.venc.localeCompare(b.p.venc));
   tbl=`<tr><th>Cliente</th><th>Pedido</th><th>Parcela</th><th>Vencimento</th><th class="r">Valor</th><th>Status</th><th class="r"></th></tr>`+
@@ -1050,6 +1051,19 @@ function fReceber(id){const s=S.sales.find(x=>x.id===id),c=C(s.cli),ps=openPs(s)
  <div class="w mut" id="rcp"></div></div>
  ${hist.length?`<div class="sec">Pagamentos já feitos</div><div class="mut" style="line-height:1.7">${hist.map(x=>`${br(x.d)} · <b>${R(x.v)}</b> · ${H(PAGS[x.fp]||x.fp||'')} · ${H(x.u||'')}`).join('<br>')}</div>`:''}
  <div class="acts"><button class="btn light" onclick="close_()">Cancelar</button><button class="btn dark" onclick="doReceber('${id}')">Confirmar recebimento</button></div>`);prevRec(id)}
+function fReparc(id){const s=S.sales.find(x=>x.id===id),c=C(s.cli),ps=openPs(s);if(!ps.length)return toast('Esse carnê já está todo pago');
+ const falta=r2(ps.reduce((a,p)=>a+prem(p),0));
+ modal(`<h2>Valor da parcela</h2><p class="mut" style="margin-bottom:14px">${H(c.n)} · pedido #${String(s.n).padStart(5,'0')} · falta ${R(falta)}. As parcelas em aberto são refeitas com o valor que você combinar. O que já foi pago não muda.</p>
+ <div class="f"><label class="w">Valor de cada parcela (R$)<input id="rpv" type="number" step="0.01" value="${c.pv||''}" placeholder="Ex.: 200" oninput="prevReparc('${id}')"></label><div class="w mut" id="rpp"></div></div>
+ <div class="acts"><button class="btn light" onclick="close_()">Cancelar</button><button class="btn dark" onclick="sReparc('${id}')">Salvar</button></div>`);prevReparc(id)}
+function reparcPs(s,pv){const open=openPs(s),keep=open.filter(p=>(p.vp||0)>0),free=open.filter(p=>!(p.vp>0)),rest=r2(free.reduce((a,p)=>a+p.v,0));return{open,keep,free,rest,novas:free.length&&pv>0?genParcsV(rest,pv,free[0].venc):[]}}
+function prevReparc(id){const s=S.sales.find(x=>x.id===id),pv=+$('rpv').value,r=reparcPs(s,pv);const l=r.novas[r.novas.length-1];$('rpp').innerHTML=pv>0&&l?(r.novas.length>1?(r.novas.length-1)+'x de <b>'+R(pv)+'</b> + última de <b>'+R(l.v)+'</b>':'1 parcela de <b>'+R(l.v)+'</b>')+' (total '+R(r.rest)+')':''}
+function sReparc(id){const s=S.sales.find(x=>x.id===id),pv=+$('rpv').value;if(!(pv>0))return toast('Coloca o valor da parcela');const r=reparcPs(s,pv);
+ const ks=r.free.map(p=>p.k).sort((a,b)=>a-b);let mx=Math.max(0,...s.parcs.map(p=>p.k));
+ const novas=r.novas.map((p,i)=>({...p,k:i<ks.length?ks[i]:++mx}));
+ const sobra=r.free.filter(p=>!ks.slice(0,novas.length).includes(p.k)).map(p=>({...p,v:0,pago:null,vp:0,canc:true}));
+ s.parcs=[...s.parcs.filter(p=>!r.free.includes(p)),...novas,...sobra].sort((a,b)=>a.k-b.k);s.parc=s.parcs.filter(p=>!p.canc).length;
+ const c=S.cli.find(x=>x.id===s.cli);if(c)c.pv=pv;logA(s,'Parcela refeita: '+R(pv));save();close_();render();toast('Parcelas refeitas')}
 function fAdiar(id){const s=S.sales.find(x=>x.id===id),c=C(s.cli);
  modal(`<h2>Adiar cobrança</h2><p class="mut" style="margin-bottom:14px">${H(c.n)} · pedido #${String(s.n).padStart(5,'0')}. As parcelas atrasadas deixam de contar como atraso até a data escolhida.</p>
  <div class="f"><label class="w">Adiar até<input id="adt" type="date" value="${addM(hoje(),1)}"></label></div>
@@ -1456,7 +1470,7 @@ function viaHTML(s){
  <div class="ppc"><em>${s.ent?'ENTREGA':orc?'ORÇAMENTO':'RETIRADA'}</em>${s.ent?`<b>Previsão: ${br(s.ent.d)}</b>${H(s.ent.end||'')}${s.ent.end?' · ':''}${H(s.ent.cid||'')}`:`<b>${H(s.loja)}</b>${orc?'Válido até '+br(s.val):'Retirada na loja'}`}</div></div>
  <table class="ppt"><tr><th></th><th>Produto</th><th class="r">Qtd.</th><th class="r">Unitário</th><th class="r">Total</th></tr>
  ${s.items.map(i=>`<tr><td class="f">${ph(i)}</td><td><b>${H(P(i.prod).n)}</b></td><td class="r">${i.q}</td><td class="r">${R(i.u)}</td><td class="r"><b>${R(i.q*i.u)}</b></td></tr>`).join('')}</table>
- <div class="ppg2"><div class="ppc"><em>${orc?'CONDIÇÃO':'PAGAMENTO'}</em><b>${H(pag)}</b>${s.entr>0?`Entrada: ${R(s.entr)}<br>`:''}${s.parcs&&s.parcs.length?`<div class="ppv">${s.parcs.map(p=>`<span>${p.k}ª · ${br(p.venc)} · ${R(p.v)}</span>`).join('')}</div>`:''}</div>
+ <div class="ppg2"><div class="ppc"><em>${orc?'CONDIÇÃO':'PAGAMENTO'}</em><b>${H(pag)}</b>${s.entr>0?`Entrada: ${R(s.entr)}<br>`:''}${s.parcs&&s.parcs.length?`<div class="ppv">${s.parcs.filter(p=>!p.canc).map(p=>`<span>${p.k}ª · ${br(p.venc)} · ${R(p.v)}</span>`).join('')}</div>`:''}</div>
  <div class="ppt2"><div>Subtotal ${R(sub)}</div>${s.desc?`<div>Desconto - ${R(s.desc)}</div>`:''}<small>TOTAL</small><b>${R(s.v)}</b></div></div>
  ${s.obs?`<div class="ppc" style="margin-top:10px"><em>OBSERVAÇÕES</em>${H(s.obs)}</div>`:''}
  <div class="pps"><div>Assinatura do cliente</div><div>${H(st.nome)} · responsável</div></div>
@@ -1541,7 +1555,7 @@ function viaPDF(s){
  y+=12;RR(tx-10,y,240,30,7,TH.ink);T(tx,y+20,'TOTAL',12,1,G2);T(ct,y+20,R(s.v),14,1,G2,'r');
  y+=48;
  const box=(tit,lines)=>{const h=26+lines.length*14;RR(M,y,IW,h,8,null,TH.line);T(M+12,y+17,tit,7.5,1,GOLD);lines.forEach((l,k)=>T(M+12,y+33+k*14,l,9.5,0,'#222222'));y+=h+10};
- if(s.parcs&&s.parcs.length){const ls=[];for(let k=0;k<s.parcs.length;k+=3)ls.push(s.parcs.slice(k,k+3).map(x=>`${x.k}ª  ${br(x.venc)}  ${R(x.v)}`).join('          '));box('PARCELAS DO CARNÊ',ls)}
+ if(s.parcs&&s.parcs.length){const PC=s.parcs.filter(p=>!p.canc),ls=[];for(let k=0;k<PC.length;k+=3)ls.push(PC.slice(k,k+3).map(x=>`${x.k}ª  ${br(x.venc)}  ${R(x.v)}`).join('          '));box('PARCELAS DO CARNÊ',ls)}
  if(s.ent)box('ENTREGA',[fit(`${s.ent.end?s.ent.end+'  ·  ':''}${s.ent.cid}  ·  Previsão: ${br(s.ent.d)}`,9.5,0,IW-24)]);
  if(s.obs)box('OBSERVAÇÕES',wrap(s.obs,9.5,0,IW-24).slice(0,4));
  // assinaturas
@@ -1576,7 +1590,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611031530';
+const APP_VER='202611031620';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
