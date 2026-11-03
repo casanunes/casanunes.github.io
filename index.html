@@ -1239,9 +1239,10 @@ function viaHTML(s){
 async function zapPed(id){const s=S.sales.find(x=>x.id===id)||S.orc.find(x=>x.id===id);if(!s)return;const c=C(s.cli),txt=msgPed(s),nome=`${s.tipo==='orc'?'Orcamento':'Pedido'}-${String(s.n).padStart(5,'0')}-CasaNunes.pdf`;
  let blob;try{blob=viaPDF(s)}catch(e){window.open(waUrl(c.tel,txt),'_blank');return toast('Não deu pra gerar o PDF, abri só o texto',4000)}
  const f=new File([blob],nome,{type:'application/pdf'});
- try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text:txt,title:nome});return}}catch(e){if(e&&e.name==='AbortError')return}
+ let cop=false;try{await navigator.clipboard.writeText(txt);cop=true}catch(e){}
+ try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text:txt,title:nome});if(cop)toast('Mensagem copiada: cole com Ctrl+V na legenda do PDF',9000);return}}catch(e){if(e&&e.name==='AbortError')return}
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),20000);
- window.open(waUrl(c.tel,txt),'_blank');toast('PDF baixado. Arraste ele para a conversa do WhatsApp que abriu',8000)}
+ window.open(waUrl(c.tel,txt),'_blank');toast(cop?'PDF baixado e mensagem copiada. Arraste o PDF para a conversa e cole a mensagem (Ctrl+V)':'PDF baixado. Arraste ele para a conversa do WhatsApp que abriu',9000)}
 function verVia(id,nova){const s=S.sales.find(x=>x.id===id)||S.orc.find(x=>x.id===id);if(!s)return;const orc=s.tipo==='orc';
  modal(`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap"><h2 style="margin:0">${nova==='orc'?'Orçamento salvo ✓':nova?'Venda finalizada ✓':orc?'Orçamento':'Via do cliente'}</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn light" onclick="close_()">Fechar</button><button class="btn wa" onclick="zapPed('${id}')">${ic('wa')}WhatsApp + PDF</button><button class="btn acc" id="pbtn" onclick="imprimir('${id}')">${ic('print')}Imprimir</button></div></div>${viaHTML(s)}`,true);
 }
@@ -1348,7 +1349,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['admin']].some(t=>t[0]===h0))
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611031240';
+const APP_VER='202611031300';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
