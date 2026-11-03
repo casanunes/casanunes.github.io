@@ -589,25 +589,26 @@ const visS0=s=>!ownV()||s.vend===CU.vend;
 const visS=s=>!s.canc&&visS0(s);
 const inM=(x,k=mes)=>x.d.slice(0,7)===k;
 const custo=s=>s.items.reduce((a,i)=>a+P(i.prod).c*i.q,0);
-const fatAll=k=>S.sales.filter(s=>inM(s,k)&&!s.canc).reduce((a,s)=>a+s.v,0);
+const fatAll=k=>r2(S.sales.filter(s=>!s.canc).reduce((a,s)=>a+recSale(s,k),0));
 const comV=(v,k)=>fatAll(k)*(+v.com||0)/100; // comissão = % do faturamento das DUAS lojas
 const dsc=s=>s.items.map(i=>P(i.prod).n+(i.q>1?' ×'+i.q:'')).join(' + ');
 const stOf=s=>s.canc?['Cancelado','bad']:!s.ent?['Retirado','gr']:s.ent.st==='Entregue'?['Entregue','ok']:['A entregar','wa'];
 function cartaoParcelas(s){if(s.canc||s.pag!=='Cartão de crédito')return [];const n=Math.max(1,s.parc||1),net=(s.v-fee(s))/n;return Array.from({length:n},(_,j)=>({k:addM(s.d,j+1).slice(0,7),v:net}))}
-function recebido(k,l=loja){let t=0;S.sales.filter(s=>!s.canc&&visS0(s)).forEach(s=>{const inLj=x=>inL({loja:x||s.loja},l);
- if(inL(s,l)){if(s.pag==='Cartão de crédito'){cartaoParcelas(s).forEach(c=>{if(c.k===k)t+=c.v})}else if(inM(s,k))t+=s.pag==='Carnê'?(+s.entr||0):s.v}
- (s.parcs||[]).forEach(p=>{if(p.pago&&!p.vp&&p.pago.slice(0,7)===k&&inLj(p.loja))t+=p.v});
- S.cpag.filter(x=>x.vid===s.id&&x.d.slice(0,7)===k&&inLj(x.loja)).forEach(x=>{t+=x.v})});return r2(t)}
+function recSale(s,k,fx){let t=0;
+ if(s.pag==='Cartão de crédito'&&fx){cartaoParcelas(s).forEach(c=>{if(c.k===k)t+=c.v})}else if(inM(s,k))t+=s.pag==='Carnê'?(+s.entr||0):s.v;
+ (s.parcs||[]).forEach(p=>{if(p.pago&&!p.vp&&p.pago.slice(0,7)===k)t+=p.v});
+ S.cpag.forEach(x=>{if(x.vid===s.id&&x.d.slice(0,7)===k)t+=x.v});return t}
+function recebido(k,l=loja,fx){let t=0;S.sales.filter(s=>!s.canc&&visS0(s)&&inL(s,l)).forEach(s=>{t+=recSale(s,k,fx)});return r2(t)}
 function aReceberCarne(l=loja){let t=0;S.sales.filter(s=>!s.canc&&visS0(s)&&inL(s,l)&&s.pag==='Carnê').forEach(s=>(s.parcs||[]).forEach(p=>{if(!p.canc)t+=prem(p)}));return r2(t)}
 function totals(k,l=loja){
  const sv=S.sales.filter(s=>inM(s,k)&&inL(s,l)&&visS(s)),ex=S.exp.filter(e=>inM(e,k)&&inL(e,l));
- const fat=sv.reduce((a,s)=>a+s.v,0),cmv=sv.reduce((a,s)=>a+custo(s),0);
+ const fat=recebido(k,l),cmv=S.sales.filter(s=>!s.canc&&visS0(s)&&inL(s,l)).reduce((a,s)=>a+(s.v>0?custo(s)*Math.min(1,recSale(s,k)/s.v):0),0);
  const sal=S.vend.filter(v=>inL(v,l)&&(!ownV()||v.id===CU.vend)).reduce((a,v)=>a+(+v.sal||0),0);
  const com=S.vend.filter(v=>inL(v,l)&&(!ownV()||v.id===CU.vend)).reduce((a,v)=>a+comV(v,k),0);
  const fx=ex.filter(e=>e.t==='Fixa').reduce((a,e)=>a+e.v,0),vr=ex.filter(e=>e.t!=='Fixa').reduce((a,e)=>a+e.v,0);
  const tax=sv.reduce((a,s)=>a+fee(s),0);
  const gas=sal+com+fx+vr+tax;
- return {sv,ex,fat,cmv,sal,com,fx,vr,tax,gas,luc:fat-cmv-gas,tk:sv.length?fat/sv.length:0,rec:recebido(k,l),pend:aReceberCarne(l)};
+ return {sv,ex,fat,cmv,sal,com,fx,vr,tax,gas,luc:fat-cmv-gas,tk:sv.length?fat/sv.length:0,pend:aReceberCarne(l)};
 }
 function feeOf(s){const r=S.cfg.tx,pc=s.pag==='Pix'?r.pix:s.pag==='Cartão de débito'?r.deb:s.pag==='Cartão de crédito'?(s.parc<=1?r.c1:s.parc<=6?r.c6:r.c12):0;return s.v*(+pc||0)/100}
 const fee=s=>s.fee!=null?s.fee:feeOf(s);
@@ -674,10 +675,10 @@ V.geral=()=>{
  return head((h<12?'Bom dia':h<18?'Boa tarde':'Boa noite')+', '+H(CU.n.split(' ')[0]),'Acompanhe as vendas, as entregas e o caixa das lojas.')+`
  <div class="g-top">
   <div class="card">
-   <div class="lbl">Vendido em ${MESL[+mes.slice(5)-1]}</div>
+   <div class="lbl">Faturamento de ${MESL[+mes.slice(5)-1]}</div>
    <div class="big">${R(t.fat)}</div>
    <div>${dchip(t.fat,o.fat)} <span class="mut">que o mês passado</span></div>
-   <div class="mut" style="margin-top:6px">Entrou no caixa: <b style="color:var(--ink)">${R(t.rec)}</b> · A receber dos carnês: <b style="color:var(--ink)">${R(t.pend)}</b></div>
+   ${isAdm()?`<div class="mut" style="margin-top:6px">A receber dos carnês: <b style="color:var(--ink)">${R(t.pend)}</b></div>`:''}
    <div class="btns">${tabsOk().some(x=>x[0]==='pdv')?`<button class="btn dark" onclick="go('pdv')">${ic('plus')}Nova venda</button>`:''}${tabsOk().some(x=>x[0]==='pedidos')?`<button class="btn line" onclick="go('pedidos')">Ver pedidos</button>`:''}</div>
    <div class="inner"><div class="ih">Lojas <span>| ${L.length===1?'sua loja':'Total '+L.length}</span></div>
     <div class="lj" style="${L.length===1?'grid-template-columns:1fr':''}">${L.map(x=>{const m=S.meta[x.l]||0;return `<div style="${show(x.l)?'':'opacity:.45'}"><div class="n"><i class="${x.i?'hatch':'solid'}"></i>${x.l}</div><b>${R(x.t.fat)}</b><span class="mut">${x.t.sv.length} vendas</span><div class="mf" style="margin-top:4px"><span style="color:${m&&x.t.fat>=m?'var(--ok)':'var(--mut)'}">${m?(x.t.fat/m*100).toFixed(0)+'% da meta':'sem meta'}</span></div></div>`}).join('')}</div></div>
@@ -1050,7 +1051,7 @@ V.fluxo=()=>{
  let acc=0;const rows=ks.map(k=>{const ent=car[k]+crt[k],sd=ent-saidas;acc+=sd;return `<tr><td><b>${MESL[+k.slice(5)-1]}/${k.slice(2,4)}</b>${k===k0?' <span class="chip">este mês</span>':''}</td><td class="r">${R(car[k])}</td><td class="r">${R(crt[k])}</td><td class="r"><b>${R(ent)}</b></td><td class="r">- ${R(saidas)}</td><td class="r" style="color:var(${sd<0?'--bad':'--ok'})"><b>${R(sd)}</b></td><td class="r">${R(acc)}</td></tr>`}).join('');
  const tot=ks.reduce((a,k)=>a+car[k]+crt[k],0);
  return head('Fluxo de caixa','Quando o dinheiro realmente entra, mês a mês (só o administrador vê)','<div></div>')+`<div class="k6">
-  ${tile('Entrou este mês',R(recebido(k0,'Todas')),'dinheiro que já entrou em '+MESL[+k0.slice(5)-1],'coins',true)}${tile('A receber em 12 meses',R(tot),'carnês + cartão de crédito','trend')}${tile('Carnês atrasados',R(atras),'já venceram e ainda não foram pagos','clock')}${tile('Saída fixa por mês',R(saidas),'salários + despesas fixas do mês','wallet')}</div>
+  ${tile('Entrou este mês',R(recebido(k0,'Todas',true)),'dinheiro que já entrou em '+MESL[+k0.slice(5)-1],'coins',true)}${tile('A receber em 12 meses',R(tot),'carnês + cartão de crédito','trend')}${tile('Carnês atrasados',R(atras),'já venceram e ainda não foram pagos','clock')}${tile('Saída fixa por mês',R(saidas),'salários + despesas fixas do mês','wallet')}</div>
   <div class="card mt"><div class="ct"><div><h3>Previsão dos próximos 12 meses</h3><p>Cada parcela cai no mês em que o dinheiro entra de verdade</p></div></div>
   <div class="tw"><table><tr><th>Mês</th><th class="r">Carnês</th><th class="r">Cartão de crédito</th><th class="r">Total que entra</th><th class="r">Saídas fixas</th><th class="r">Sobra no mês</th><th class="r">Acumulado</th></tr>${rows}</table></div>
   <p class="mut" style="margin:12px 4px 0">Carnês atrasados entram no mês atual. O cartão de crédito cai parcela por parcela, já descontada a taxa. Pix, dinheiro e débito entram na hora. As saídas contam só salários e despesas fixas lançadas neste mês; comissões, despesas variáveis e compra de mercadoria não entram na conta.</p></div>`};
@@ -1064,7 +1065,7 @@ V.financeiro=()=>{
   ${arr.map(e=>`<tr><td class="mut">${brs(e.d)}</td><td><b>${H(e.n)}</b></td><td class="mut">${e.loja}</td><td class="r"><b>${R(e.v)}</b></td><td class="r">${can('del')?`<button class="x" onclick="delExp('${e.id}')">${ic('x','width:14px;height:14px')}</button>`:''}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">Nada lançado</td></tr>'}</table></div></div>`;
  return head('Financeiro','Entradas, salários, comissões e despesas de '+mlabel(mes))+`
  <div class="k6">
-  ${tile('Vendido no mês',R(t.fat),dchip(t.fat,o.fat)+' vs. mês passado','trend')}${tile('Entrou no caixa',R(t.rec),'dinheiro que realmente entrou no mês','coins')}${tile('A receber dos carnês',R(t.pend),'parcelas ainda em aberto','carne')}
+  ${tile('Faturamento',R(t.fat),dchip(t.fat,o.fat)+' vs. mês passado','trend')}${isAdm()?tile('A receber dos carnês',R(t.pend),'parcelas ainda em aberto','carne'):''}
   ${cl?tile('Custo dos produtos',R(t.cmv),`<span class="chip">margem ${t.fat?((t.fat-t.cmv)/t.fat*100).toFixed(0):0}%</span>`,'store'):''}
   ${tile('Gastos do mês',R(t.gas),'salários, comissões, despesas e taxas','wallet')}
   ${cl?tile('Lucro líquido',R(t.luc),dchip(t.luc,o.luc)+' vs. mês passado','coins',true):''}
@@ -1381,7 +1382,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin']].some(t=>t
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611031440';
+const APP_VER='202611031500';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
