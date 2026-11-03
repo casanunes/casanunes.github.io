@@ -393,6 +393,7 @@ const IC={
  geral:'<rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/>',
  pdv:'<path d="M3 7h18l-1.6 9.2a2 2 0 0 1-2 1.8H6.6a2 2 0 0 1-2-1.8z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/>',
  pedidos:'<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/>',
+ fluxo:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
  financeiro:'<rect x="2" y="6" width="20" height="13" rx="3"/><path d="M2 10h20M6 15h4"/>',
  estoque:'<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
  clientes:'<circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M16 4a3.5 3.5 0 0 1 0 7M22 20c0-3-2-5-4.5-5.6"/>',
@@ -580,7 +581,7 @@ const isAdm=()=>CU&&CU.role==='admin';
 const can=k=>isAdm()||(CU&&CU[k]);
 const lojasOk=()=>SL?[SL]:isAdm()?LOJAS:LOJAS.filter(l=>CU.lojas.includes(l));
 const atacOk=()=>CU&&(isAdm()||(CU.atac&&(SL?SL==='Loja 1':CU.lojas.includes('Loja 1'))));
-const tabsOk=()=>{const b=isAdm()?[...TABS,['admin','Administração']]:TABS.filter(t=>CU.tabs.includes(t[0]));
+const tabsOk=()=>{const b=isAdm()?[...TABS,['fluxo','Fluxo de caixa'],['admin','Administração']]:TABS.filter(t=>CU.tabs.includes(t[0]));
  return atacOk()?[...b.filter(t=>t[0]!=='admin'),['atacado','Atacado'],...b.filter(t=>t[0]==='admin')]:b};
 const inL=(x,l=loja)=>l==='Todas'?lojasOk().includes(x.loja):x.loja===l;
 const ownV=()=>!isAdm()&&CU.own&&CU.vend;
@@ -592,6 +593,12 @@ const fatAll=k=>S.sales.filter(s=>inM(s,k)&&!s.canc).reduce((a,s)=>a+s.v,0);
 const comV=(v,k)=>fatAll(k)*(+v.com||0)/100; // comissão = % do faturamento das DUAS lojas
 const dsc=s=>s.items.map(i=>P(i.prod).n+(i.q>1?' ×'+i.q:'')).join(' + ');
 const stOf=s=>s.canc?['Cancelado','bad']:!s.ent?['Retirado','gr']:s.ent.st==='Entregue'?['Entregue','ok']:['A entregar','wa'];
+function cartaoParcelas(s){if(s.canc||s.pag!=='Cartão de crédito')return [];const n=Math.max(1,s.parc||1),net=(s.v-fee(s))/n;return Array.from({length:n},(_,j)=>({k:addM(s.d,j+1).slice(0,7),v:net}))}
+function recebido(k,l=loja){let t=0;S.sales.filter(s=>!s.canc&&visS0(s)).forEach(s=>{const inLj=x=>inL({loja:x||s.loja},l);
+ if(inL(s,l)){if(s.pag==='Cartão de crédito'){cartaoParcelas(s).forEach(c=>{if(c.k===k)t+=c.v})}else if(inM(s,k))t+=s.pag==='Carnê'?(+s.entr||0):s.v}
+ (s.parcs||[]).forEach(p=>{if(p.pago&&!p.vp&&p.pago.slice(0,7)===k&&inLj(p.loja))t+=p.v});
+ S.cpag.filter(x=>x.vid===s.id&&x.d.slice(0,7)===k&&inLj(x.loja)).forEach(x=>{t+=x.v})});return r2(t)}
+function aReceberCarne(l=loja){let t=0;S.sales.filter(s=>!s.canc&&visS0(s)&&inL(s,l)&&s.pag==='Carnê').forEach(s=>(s.parcs||[]).forEach(p=>{if(!p.canc)t+=prem(p)}));return r2(t)}
 function totals(k,l=loja){
  const sv=S.sales.filter(s=>inM(s,k)&&inL(s,l)&&visS(s)),ex=S.exp.filter(e=>inM(e,k)&&inL(e,l));
  const fat=sv.reduce((a,s)=>a+s.v,0),cmv=sv.reduce((a,s)=>a+custo(s),0);
@@ -600,7 +607,7 @@ function totals(k,l=loja){
  const fx=ex.filter(e=>e.t==='Fixa').reduce((a,e)=>a+e.v,0),vr=ex.filter(e=>e.t!=='Fixa').reduce((a,e)=>a+e.v,0);
  const tax=sv.reduce((a,s)=>a+fee(s),0);
  const gas=sal+com+fx+vr+tax;
- return {sv,ex,fat,cmv,sal,com,fx,vr,tax,gas,luc:fat-cmv-gas,tk:sv.length?fat/sv.length:0};
+ return {sv,ex,fat,cmv,sal,com,fx,vr,tax,gas,luc:fat-cmv-gas,tk:sv.length?fat/sv.length:0,rec:recebido(k,l),pend:aReceberCarne(l)};
 }
 function feeOf(s){const r=S.cfg.tx,pc=s.pag==='Pix'?r.pix:s.pag==='Cartão de débito'?r.deb:s.pag==='Cartão de crédito'?(s.parc<=1?r.c1:s.parc<=6?r.c6:r.c12):0;return s.v*(+pc||0)/100}
 const fee=s=>s.fee!=null?s.fee:feeOf(s);
@@ -667,9 +674,10 @@ V.geral=()=>{
  return head((h<12?'Bom dia':h<18?'Boa tarde':'Boa noite')+', '+H(CU.n.split(' ')[0]),'Acompanhe as vendas, as entregas e o caixa das lojas.')+`
  <div class="g-top">
   <div class="card">
-   <div class="lbl">Faturamento de ${MESL[+mes.slice(5)-1]}</div>
+   <div class="lbl">Vendido em ${MESL[+mes.slice(5)-1]}</div>
    <div class="big">${R(t.fat)}</div>
    <div>${dchip(t.fat,o.fat)} <span class="mut">que o mês passado</span></div>
+   <div class="mut" style="margin-top:6px">Entrou no caixa: <b style="color:var(--ink)">${R(t.rec)}</b> · A receber dos carnês: <b style="color:var(--ink)">${R(t.pend)}</b></div>
    <div class="btns">${tabsOk().some(x=>x[0]==='pdv')?`<button class="btn dark" onclick="go('pdv')">${ic('plus')}Nova venda</button>`:''}${tabsOk().some(x=>x[0]==='pedidos')?`<button class="btn line" onclick="go('pedidos')">Ver pedidos</button>`:''}</div>
    <div class="inner"><div class="ih">Lojas <span>| ${L.length===1?'sua loja':'Total '+L.length}</span></div>
     <div class="lj" style="${L.length===1?'grid-template-columns:1fr':''}">${L.map(x=>{const m=S.meta[x.l]||0;return `<div style="${show(x.l)?'':'opacity:.45'}"><div class="n"><i class="${x.i?'hatch':'solid'}"></i>${x.l}</div><b>${R(x.t.fat)}</b><span class="mut">${x.t.sv.length} vendas</span><div class="mf" style="margin-top:4px"><span style="color:${m&&x.t.fat>=m?'var(--ok)':'var(--mut)'}">${m?(x.t.fat/m*100).toFixed(0)+'% da meta':'sem meta'}</span></div></div>`}).join('')}</div></div>
@@ -805,8 +813,8 @@ function card(s){
   ${s.canc?`<div class="mot"><b>Motivo:</b> ${H(s.canc.mot||'—')} · por ${H(s.canc.u)}</div>`:''}
   ${s.trocas&&s.trocas.length?`<div class="mut" style="margin:4px 0">${ic('swap','width:13px;height:13px;vertical-align:-2px')} ${s.trocas.length} troca${s.trocas.length>1?'s':''} feita${s.trocas.length>1?'s':''}</div>`:''}
   <div class="otot"><span>Total <span class="mut" style="font-weight:500">· ${PAGS[s.pag]}${s.parc>1?' '+s.parc+'x':''}</span></span><b style="${s.canc?'text-decoration:line-through':''}">${R(s.v)}</b></div>
-  <div class="ob"><button class="btn light sm" onclick="verVia('${s.id}')">${ic('print','width:15px;height:15px')}Via do cliente</button>${ag?`<button class="btn acc sm" onclick="entregue('${s.id}')">${ic('check','width:15px;height:15px')}Marcar entregue</button>`:s.canc?`<button class="btn line sm" onclick="hist('${s.id}')">${ic('hist','width:15px;height:15px')}Histórico</button>`:waBtn(c.tel,msgPed(s),'Enviar no WhatsApp')}</div>
-  ${s.canc?'':`<div class="ob2">${ag?waBtn(c.tel,msgEnt(s),'Avisar entrega'):''}${can('del')?`<button class="btn line" onclick="fTroca('${s.id}')">${ic('swap','width:14px;height:14px')}Troca</button><button class="btn line" onclick="fCanc('${s.id}')">${ic('ban','width:14px;height:14px')}Cancelar</button>`:''}<button class="btn line" onclick="hist('${s.id}')">${ic('hist','width:14px;height:14px')}Histórico</button></div>`}</div>`;
+  <div class="ob"><button class="btn light sm" onclick="verVia('${s.id}')">${ic('print','width:15px;height:15px')}Via do cliente</button>${ag?`<button class="btn acc sm" onclick="entregue('${s.id}')">${ic('check','width:15px;height:15px')}Marcar entregue</button>`:s.canc?`<button class="btn line sm" onclick="hist('${s.id}')">${ic('hist','width:15px;height:15px')}Histórico</button>`:`<button class="btn wa sm" onclick="zapPed('${s.id}')">${ic('wa')}WhatsApp + PDF</button>`}</div>
+  ${s.canc?'':`<div class="ob2">${ag?waBtn(c.tel,msgEnt(s),'Avisar entrega'):''}${can('del')?`<button class="btn line" onclick="fTroca('${s.id}')">${ic('swap','width:14px;height:14px')}Troca</button><button class="btn line" onclick="fCanc('${s.id}')">${ic('ban','width:14px;height:14px')}Cancelar</button>`:''}<button class="btn line" onclick="fEnt('${s.id}')">${ic('pedidos','width:14px;height:14px')}Editar entrega</button><button class="btn line" onclick="hist('${s.id}')">${ic('hist','width:14px;height:14px')}Histórico</button></div>`}</div>`;
 }
 function orcCard(o){const c=C(o.cli),venc=o.val<hoje();
  return `<div class="oc" data-q="${H((c.n+' '+o.n+' '+dsc(o)).toLowerCase())}"><div class="oh">${oav(o,c)}<div><b>${H(c.n)}</b><small>Orçamento #${String(o.n).padStart(5,'0')} / ${o.loja}</small></div>
@@ -816,6 +824,13 @@ function orcCard(o){const c=C(o.cli),venc=o.val<hoje();
   <div class="ob"><button class="btn light sm" onclick="verVia('${o.id}')">${ic('print','width:15px;height:15px')}Ver / imprimir</button><button class="btn acc sm" onclick="orcVenda('${o.id}')">${ic('check','width:15px;height:15px')}Virar venda</button></div>
   <div class="ob2"><button class="btn wa sm" onclick="zapPed('${o.id}')">${ic('wa')}Mandar no WhatsApp + PDF</button><button class="btn line" onclick="S.orc=S.orc.filter(x=>x.id!=='${o.id}');save();render();toast('Orçamento apagado')">${ic('trash','width:14px;height:14px')}Apagar</button></div></div>`}
 function filtCards(q){q=q.toLowerCase();document.querySelectorAll('#orders .oc').forEach(e=>e.style.display=e.dataset.q.includes(q)?'':'none')}
+function fEnt(id){const s=S.sales.find(x=>x.id===id);if(!s)return;const e=s.ent||{cid:CIDADES[0],end:'',d:iso(new Date(Date.now()+2*864e5)),st:'Agendada'};
+ modal(`<h2>Editar entrega · pedido #${String(s.n).padStart(5,'0')}</h2><div class="f">
+ <label class="w">Como o cliente recebe<select id="et" onchange="$('ebox').style.display=this.value==='ent'?'':'none'">${opt([['ret','Retirou na loja'],['ent','Entrega na casa do cliente']],s.ent?'ent':'ret')}</select></label></div>
+ <div id="ebox" class="f" style="display:${s.ent?'':'none'};margin-top:10px"><label>Cidade<select id="ec">${opt(CIDADES,e.cid)}</select></label><label>Data<input id="ed" type="date" value="${e.d||''}"></label><label class="w">Endereço (rua, número, bairro)<input id="ee" value="${H(e.end||'')}"></label><label class="w">Situação<select id="es">${opt([['Agendada','A entregar'],['Entregue','Já entregue']],e.st||'Agendada')}</select></label></div>${acts("sEnt('"+id+"')")}`)}
+function sEnt(id){const s=S.sales.find(x=>x.id===id);if(!s)return;const t=$('et').value;
+ if(t==='ent')s.ent={cid:$('ec').value,end:$('ee').value.trim(),d:$('ed').value||hoje(),st:$('es').value};else s.ent=null;
+ logA(s,t==='ent'?'Entrega editada':'Marcado como retirado na loja');save();close_();render();toast('Entrega atualizada')}
 function entregue(id){const s=S.sales.find(x=>x.id===id);s.ent.st='Entregue';s.ent.d=hoje();logA(s,'Entrega concluída');save();render();toast('Entrega concluída')}
 function fCanc(id){const s=S.sales.find(x=>x.id===id);
  modal(`<h2>Cancelar pedido #${String(s.n).padStart(5,'0')}?</h2><p class="mut" style="margin-bottom:14px">${H(C(s.cli).n)} · ${R(s.v)}. Os produtos voltam pro estoque e o pedido sai do faturamento, mas fica guardado na aba Cancelados${s.parcs?' e as parcelas em aberto do carnê são canceladas':''}.</p>
@@ -1023,6 +1038,22 @@ function fSang(){modal(`<h2>Retirada do caixa</h2><div class="f"><label>Valor<in
  <div class="acts"><button class="btn light" onclick="close_()">Cancelar</button><button class="btn dark" onclick="if(!+$('sgv').value)return toast('Coloca o valor');S.sang.push({id:uid(),d:cxD,loja:cxL,v:+$('sgv').value,n:$('sgn').value||'Retirada',u:CU.n});save();close_();render()">Salvar</button></div>`)}
 
 // ---------- financeiro ----------
+V.fluxo=()=>{
+ if(!isAdm())return head('Fluxo de caixa','Só o administrador vê esta tela','<div></div>');
+ const hj=hoje(),k0=hj.slice(0,7),mk=n=>{const d=new Date(+k0.slice(0,4),+k0.slice(5)-1+n,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
+ const tile=(l,v,d,k,acc)=>`<div class="tile ${acc?'acc':''}"><div class="th"><span>${l}</span><i>${ic(k,'width:16px;height:16px')}</i></div><div><div class="tv">${v}</div><div class="td">${d}</div></div></div>`;
+ const ks=Array.from({length:12},(_,i)=>mk(i)),car={},crt={};let atras=0;ks.forEach(k=>{car[k]=0;crt[k]=0});
+ S.sales.filter(s=>!s.canc).forEach(s=>{
+  if(s.pag==='Carnê')(s.parcs||[]).forEach(p=>{if(p.canc)return;const r=prem(p);if(r<=0)return;let k=p.venc.slice(0,7);if(k<k0){atras+=r;k=k0}if(car[k]!==undefined)car[k]+=r});
+  cartaoParcelas(s).forEach(c=>{if(c.k>=k0&&crt[c.k]!==undefined)crt[c.k]+=c.v})});
+ const sal=S.vend.reduce((a,v)=>a+(+v.sal||0),0),fxm=S.exp.filter(e=>e.t==='Fixa'&&inM(e,k0)).reduce((a,e)=>a+e.v,0),saidas=sal+fxm;
+ let acc=0;const rows=ks.map(k=>{const ent=car[k]+crt[k],sd=ent-saidas;acc+=sd;return `<tr><td><b>${MESL[+k.slice(5)-1]}/${k.slice(2,4)}</b>${k===k0?' <span class="chip">este mês</span>':''}</td><td class="r">${R(car[k])}</td><td class="r">${R(crt[k])}</td><td class="r"><b>${R(ent)}</b></td><td class="r">- ${R(saidas)}</td><td class="r" style="color:var(${sd<0?'--bad':'--ok'})"><b>${R(sd)}</b></td><td class="r">${R(acc)}</td></tr>`}).join('');
+ const tot=ks.reduce((a,k)=>a+car[k]+crt[k],0);
+ return head('Fluxo de caixa','Quando o dinheiro realmente entra, mês a mês (só o administrador vê)','<div></div>')+`<div class="k6">
+  ${tile('Entrou este mês',R(recebido(k0,'Todas')),'dinheiro que já entrou em '+MESL[+k0.slice(5)-1],'coins',true)}${tile('A receber em 12 meses',R(tot),'carnês + cartão de crédito','trend')}${tile('Carnês atrasados',R(atras),'já venceram e ainda não foram pagos','clock')}${tile('Saída fixa por mês',R(saidas),'salários + despesas fixas do mês','wallet')}</div>
+  <div class="card mt"><div class="ct"><div><h3>Previsão dos próximos 12 meses</h3><p>Cada parcela cai no mês em que o dinheiro entra de verdade</p></div></div>
+  <div class="tw"><table><tr><th>Mês</th><th class="r">Carnês</th><th class="r">Cartão de crédito</th><th class="r">Total que entra</th><th class="r">Saídas fixas</th><th class="r">Sobra no mês</th><th class="r">Acumulado</th></tr>${rows}</table></div>
+  <p class="mut" style="margin:12px 4px 0">Carnês atrasados entram no mês atual. O cartão de crédito cai parcela por parcela, já descontada a taxa. Pix, dinheiro e débito entram na hora. As saídas contam só salários e despesas fixas lançadas neste mês; comissões, despesas variáveis e compra de mercadoria não entram na conta.</p></div>`};
 V.financeiro=()=>{
  const t=totals(mes),o=totals(prevK(mes)),cl=can('lucro');
  const vs=S.vend.filter(v=>inL(v)&&(!ownV()||v.id===CU.vend));
@@ -1033,7 +1064,7 @@ V.financeiro=()=>{
   ${arr.map(e=>`<tr><td class="mut">${brs(e.d)}</td><td><b>${H(e.n)}</b></td><td class="mut">${e.loja}</td><td class="r"><b>${R(e.v)}</b></td><td class="r">${can('del')?`<button class="x" onclick="delExp('${e.id}')">${ic('x','width:14px;height:14px')}</button>`:''}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">Nada lançado</td></tr>'}</table></div></div>`;
  return head('Financeiro','Entradas, salários, comissões e despesas de '+mlabel(mes))+`
  <div class="k6">
-  ${tile('Faturamento',R(t.fat),dchip(t.fat,o.fat)+' vs. mês passado','trend')}
+  ${tile('Vendido no mês',R(t.fat),dchip(t.fat,o.fat)+' vs. mês passado','trend')}${tile('Entrou no caixa',R(t.rec),'dinheiro que realmente entrou no mês','coins')}${tile('A receber dos carnês',R(t.pend),'parcelas ainda em aberto','carne')}
   ${cl?tile('Custo dos produtos',R(t.cmv),`<span class="chip">margem ${t.fat?((t.fat-t.cmv)/t.fat*100).toFixed(0):0}%</span>`,'store'):''}
   ${tile('Gastos do mês',R(t.gas),'salários, comissões, despesas e taxas','wallet')}
   ${cl?tile('Lucro líquido',R(t.luc),dchip(t.luc,o.luc)+' vs. mês passado','coins',true):''}
@@ -1343,14 +1374,14 @@ function viaPDF(s){
 
 
 
-const h0=(location.hash||'').slice(1);if([...TABS,['admin']].some(t=>t[0]===h0))tab=h0;
+const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin']].some(t=>t[0]===h0))tab=h0;
 (async()=>{const{data}=await SB.auth.getSession();
  if(data.session&&await loadAll()){try{const ss=JSON.parse(localStorage.getItem('cn-gestao-sess2')||'null');SL=ss&&ss.l||null}catch(e){}
   if(SL&&CU.role!=='admin'&&!CU.lojas.includes(SL))SL=null;if(SL&&CU.role==='admin'&&!SL)SL=null;loja=SL||'Todas';if(SL&&!isAdm())tab='pdv'}
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611031410';
+const APP_VER='202611031440';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
