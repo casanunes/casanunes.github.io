@@ -259,7 +259,7 @@ html.dark .art:not(:has(img)),html.dark .th:not(:has(img)){filter:brightness(.8)
 .accs button{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 14px 8px 8px;border-radius:99px;border:1px solid var(--line);font-size:13px;font-weight:500}
 .accs button i{width:24px;height:24px;border-radius:50%;display:block}
 .accs button.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink) inset}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--onInk);padding:12px 20px;border-radius:99px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:90;max-width:90vw;text-align:center}
+.toast{position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--ink);color:var(--onInk);padding:12px 20px;border-radius:99px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:90;max-width:90vw;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%)}
 /* login */
 #login{position:fixed;inset:0;background:var(--page);display:none;place-items:center;z-index:80;padding:16px}
@@ -728,7 +728,7 @@ function drawCart(){
  <div class="two"><div><label>Loja</label>${lojasOk().length>1?`<select onchange="cart.loja=this.value;cart.vend=defVend(this.value);drawCart()">${lojasOk().map(l=>`<option ${cart.loja===l?'selected':''}>${l}</option>`).join('')}</select>`:`<div class="ro">${cart.loja}</div>`}</div>
  <div><label>Vendedor</label>${vs.length>1?`<select onchange="cart.vend=this.value">${vs.map(v=>`<option value="${v.id}" ${cart.vend===v.id?'selected':''}>${H(v.n)}</option>`).join('')}</select>`:`<div class="ro">${vs[0]?H(vs[0].n):'—'}</div>`}</div></div>
  <label style="margin-top:14px">Produtos</label>
- ${cart.items.map((i,k)=>{const p=P(i.prod);return `<div class="ci">${pArt(p,'th')}<div><div class="nm">${H(p.n)}</div><div class="sub"><div class="qty"><button onclick="cq(${k},-1)">−</button><span>${i.q}</span><button onclick="cq(${k},1)">+</button></div><input class="pr" type="number" value="${i.u}" onchange="cart.items[${k}].u=+this.value||0;drawCart()"></div></div><div><div class="tot">${R(i.q*i.u)}</div><button class="x" style="float:right" onclick="cart.items.splice(${k},1);drawProds();drawCart()">${ic('x','width:14px;height:14px')}</button></div></div>`}).join('')||'<div class="empty" style="padding:20px">Toque nos produtos pra adicionar</div>'}
+ ${cart.items.map((i,k)=>{const p=P(i.prod);return `<div class="ci">${pArt(p,'th')}<div><div class="nm">${H(p.n)}</div><div class="sub"><div class="qty"><button onclick="cq(${k},-1)">−</button><span>${i.q}</span><button onclick="cq(${k},1)">+</button></div><input class="pr" type="number" value="${i.u}" onchange="cart.items[${k}].u=+this.value||0;drawCart()"></div></div><div><div class="tot">${R(i.q*i.u)}</div><button class="x" style="float:right" onclick="cart.items.splice(${k},1);drawProds();drawCart()">${ic('x','width:14px;height:14px')}</button></div></div>`}).join('')||'<div class="empty" style="padding:20px">Toque nos produtos pra adicionar<br><button class="btn acc sm mobonly" style="margin-top:12px" onclick="$('cart').classList.remove('open')">← Escolher os produtos</button></div>'}
  <div class="sumbox"><p><span>Subtotal</span><span>${R(sub)}</span></p><p><span>Desconto (R$)</span><input type="number" value="${cart.desc||''}" placeholder="0,00" oninput="cart.desc=+this.value||0;updTot()"></p><p class="tt"><span>Total</span><b id="ctot">${R(tot)}</b></p></div>
  <label>Pagamento</label><div class="pays">${PAG.map(p=>`<button class="pay ${cart.pag===p?'on':''}" onclick="cart.pag='${p}';drawCart()">${PAGS[p]}</button>`).join('')}</div>
  ${PARC.includes(cart.pag)?`<label>Parcelas</label><select onchange="cart.parc=+this.value;cart.pv=0;drawCart()">${Array.from({length:cart.pag==='Carnê'?36:12},(_,i)=>`<option value="${i+1}" ${cart.parc===i+1?'selected':''}>${i+1}x</option>`).join('')}</select>`:''}
@@ -752,7 +752,7 @@ function cliFromCart(){let cli=cart.cli;if(!cli){toast('Escolhe o cliente');retu
  if(cli==='__new'){if(!cart.nc.n.trim()){toast('Coloca o nome do cliente novo');return null}cli=uid();S.cli.push({id:cli,loja:cart.loja,vend:cart.vend,n:cart.nc.n.trim(),tel:cart.nc.tel,cid:cart.ent?cart.cid:'',end:cart.ent?cart.end:''})}
  return cli}
 function finalizar(){
- if(!cart.items.length)return toast('Adiciona pelo menos um produto');
+ if(!cart.items.length){const cc=$('cart');if(cc)cc.classList.remove('open');return toast('Falta escolher os produtos da venda. Toque nos produtos para adicionar.',5000)}
  const sub=cSub(),dc=+cart.desc||0,tot=sub-dc;
  if(cart.pag==='Carnê'&&(cart.entr||0)>=tot)return toast('A entrada não pode ser maior que o total');
  const cli=cliFromCart();if(!cli)return;
@@ -1349,7 +1349,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['admin']].some(t=>t[0]===h0))
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611031350';
+const APP_VER='202611031410';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
