@@ -697,7 +697,8 @@ let SNAP={},CSNAP='',SQ=Promise.resolve();
 const idx=a=>{const o={};a.forEach(r=>o[SK(r)]=r);return o};
 const skel=()=>({store:{},meta:{'Loja 1':0,'Loja 2':0},prod:[],forn:[],comp:[],vend:[],cli:[],sales:[],orc:[],atac:[],cpag:[],exp:[],users:[],caixa:[],sang:[],cxAb:{},cfg:{tx:{pix:0,deb:1.4,c1:3.1,c6:4.6,c12:6.4},ab:200},acc:'vermelho'});
 function snapAll(){SNAP={};ents().forEach(e=>SNAP[e[0]]=idx(e[2]()));CSNAP=JSON.stringify(cfgRow())}
-async function loadAll(){
+let LAP=null;function loadAll(){if(LAP)return LAP;return LAP=loadAll0().finally(()=>{LAP=null})}
+async function loadAll0(){
  const oS=S,oCU=CU,first=!CU;
  const q=t=>SB.from(t).select('*').then(r=>{if(r.error)throw r.error;return r.data||[]});
  try{
@@ -1833,7 +1834,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611051400';
+const APP_VER='202611051430';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
