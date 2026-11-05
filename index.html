@@ -29,7 +29,12 @@ header{display:flex;align-items:center;gap:14px;justify-content:space-between}
 .logo{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:99px;padding:6px 18px 6px 6px;font-weight:800;font-size:15px;letter-spacing:-.2px}
 .logo img{width:36px;height:36px;border-radius:50%;object-fit:cover}
 .logo small{display:block;font-weight:500;font-size:10.5px;color:var(--mut);letter-spacing:0}
-nav.top{display:flex;gap:2px;background:var(--card);border-radius:99px;padding:5px}
+nav.top{display:flex;gap:2px;background:var(--card);border-radius:99px;padding:5px;min-width:0;position:relative;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth}
+nav.top::-webkit-scrollbar{display:none}
+nav.top button.nv{display:none;position:sticky;flex:none;width:32px;height:32px;padding:0;margin:auto 0;place-items:center;border-radius:50%;background:var(--ink);color:var(--onInk);z-index:3;font-size:18px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+nav.top button.nv.l{left:0}nav.top button.nv.r{right:0}
+nav.top.ov button.nv{display:grid}
+html:is([data-lay=lateral],[data-lay=denso],[data-lay=direita],[data-lay=trilho]) nav.top button.nv{display:none!important}
 nav.top button{all:unset;cursor:pointer;padding:10px 14px;border-radius:99px;color:var(--ink2);font-weight:500;font-size:14px;white-space:nowrap}
 nav.top button:hover{background:var(--soft)}
 nav.top button.on{background:var(--ink);color:var(--onInk)}
@@ -829,7 +834,7 @@ function render(){
  const ok=tabsOk();
  if(!ok.some(x=>x[0]===tab))tab=ok.length?ok[0][0]:'';
  const lo=lojasOk();if(lo.length===1)loja=lo[0];else if(loja!=='Todas'&&!lo.includes(loja))loja='Todas';
- $('nav').innerHTML=ok.map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="go('${k}')" title="${l}"><span class="ni">${ic(k)}</span><span class="nl">${l}</span></button>`).join('');
+ $('nav').innerHTML='<button class="nv l" onclick="navScr(-1)" aria-label="Anterior">‹</button>'+ok.map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="go('${k}')" title="${l}"><span class="ni">${ic(k)}</span><span class="nl">${l}</span></button>`).join('')+'<button class="nv r" onclick="navScr(1)" aria-label="Próximo">›</button>';navFit(1);
  $('bnav').innerHTML=ok.map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="go('${k}')">${ic(k)}${l.replace('Visão geral','Início').replace('Administração','Admin').replace('Nova venda','Vender')}</button>`).join('');
  $('me').innerHTML=`<span class="av">${ini(CU.n)}</span><div><b>${H(CU.n)}</b><small>${isAdm()?'Administrador':'Vendedor'}</small></div>`;$('lsub').textContent=lo.length===1?lo[0]:'Todas as lojas';
  const pend=S.sales.filter(s=>s.ent&&s.ent.st==='Agendada'&&inL(s)&&visS(s)).length;$('bell').style.display=pend?'block':'none';
@@ -1553,6 +1558,12 @@ function sCompra(){const c=cmpNum(),it=c.rows.filter(r=>r.n&&r.q>0);if(!it.lengt
  const o={id:uid(),f:CMP.f,d,pag:$('cp').value,fr:c.fr,im:c.im,t:c.tot,it:itens,desp,u:CU.n};
  S.comp.push(o);if(desp)S.exp.push({id:uid(),n:'Compra · '+f.n,v:c.tot,loja:SL||(lojasOk()[0])||'Loja 1',t:'Variável',d});
  save();close_();render();toast(est?'Pedido salvo · '+ent+' peças entraram no estoque'+(novos?' · '+novos+(novos===1?' produto novo cadastrado (defina o preço de venda no Estoque)':' produtos novos cadastrados (defina o preço de venda no Estoque)'):''):'Pedido de compra salvo',est&&novos?7000:3500)}
+function navFit(center){const n=$('nav');if(!n)return;const row=getComputedStyle(n).flexDirection==='row';const ov=row&&n.scrollWidth>n.clientWidth+4;n.classList.toggle('ov',ov);
+ const l=n.querySelector('.nv.l'),rr=n.querySelector('.nv.r');
+ if(ov){if(center){const a=n.querySelector('button.on');if(a){n.style.scrollBehavior='auto';n.scrollLeft=a.offsetLeft-n.clientWidth/2+a.offsetWidth/2;n.style.scrollBehavior=''}}
+  if(l)l.style.visibility=n.scrollLeft>4?'visible':'hidden';if(rr)rr.style.visibility=n.scrollLeft+n.clientWidth<n.scrollWidth-4?'visible':'hidden'}}
+function navScr(d){const n=$('nav');n.scrollLeft+=d*Math.max(160,n.clientWidth*.6)}
+(function(){const n=$('nav');n.addEventListener('scroll',()=>navFit(0),{passive:true});n.addEventListener('wheel',e=>{if(n.classList.contains('ov')&&Math.abs(e.deltaY)>Math.abs(e.deltaX)){n.scrollLeft+=e.deltaY;e.preventDefault()}},{passive:false});addEventListener('resize',()=>navFit(0))})();
 function modal(h,wide){$('mbox').className='box'+(wide?' wide':'');$('mbox').innerHTML=h;$('modal').classList.add('on')}
 function close_(){$('modal').classList.remove('on')}
 $('modal').onclick=e=>{if(e.target.id==='modal')close_()};
@@ -1747,7 +1758,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611051130';
+const APP_VER='202611051200';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
