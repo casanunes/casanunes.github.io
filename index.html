@@ -795,6 +795,7 @@ const inM=(x,k=mes)=>x.d.slice(0,7)===k;
 const custo=s=>s.items.reduce((a,i)=>a+P(i.prod).c*i.q,0);
 const fatAll=k=>r2(S.sales.filter(s=>!s.canc).reduce((a,s)=>a+recSale(s,k),0));
 const comV=(v,k)=>fatAll(k)*(+v.com||0)/100; // comissão = % do faturamento das DUAS lojas
+const vEnt=s=>s.pag==='Carnê'?(+s.entr||0):s.v;
 const dsc=s=>s.items.map(i=>P(i.prod).n+(i.q>1?' ×'+i.q:'')).join(' + ');
 const stOf=s=>s.canc?['Cancelado','bad']:!s.ent?['Retirado','gr']:s.ent.st==='Entregue'?['Entregue','ok']:['A entregar','wa'];
 function cartaoParcelas(s){if(s.canc||s.pag!=='Cartão de crédito')return [];const n=Math.max(1,s.parc||1),net=(s.v-fee(s))/n;return Array.from({length:n},(_,j)=>({k:addM(s.d,j+1).slice(0,7),v:net}))}
@@ -904,7 +905,7 @@ V.geral=()=>{
   </div>
   <div class="card"><div class="ct"><div><h3>Últimas vendas</h3><p>${t.sv.length} vendas em ${mlabel(mes)}</p></div><div class="search">${ic('search')}<input placeholder="Buscar" oninput="filtRows(this.value,'rt')"></div></div>
    <div class="tw"><table id="rt"><tr><th>Pedido</th><th>Cliente</th><th>Produtos</th><th class="r">Valor</th><th>Status</th><th>Data</th><th></th></tr>
-   ${recent.map(s=>{const st=stOf(s);return `<tr><td class="mut">#${String(s.n).padStart(5,'0')}</td><td><b>${H(C(s.cli).n)}</b></td><td>${H(dsc(s))}</td><td class="r"><b>${R(s.v)}</b></td><td><span class="st ${st[1]}">${st[0]}</span></td><td class="mut">${brs(s.d)} ${s.h||''}</td><td class="r"><button class="x" title="Via do cliente" onclick="verVia('${s.id}')">${ic('print','width:16px;height:16px')}</button></td></tr>`}).join('')||'<tr><td colspan="7" class="empty">Nenhuma venda nesse mês</td></tr>'}</table></div>
+   ${recent.map(s=>{const st=stOf(s);return `<tr><td class="mut">#${String(s.n).padStart(5,'0')}</td><td><b>${H(C(s.cli).n)}</b></td><td>${H(dsc(s))}</td><td class="r"><b>${R(vEnt(s))}</b>${s.pag==='Carnê'?`<div class="mut" style="font-size:11px">entrada · carnê ${R(s.v)}</div>`:''}</td><td><span class="st ${st[1]}">${st[0]}</span></td><td class="mut">${brs(s.d)} ${s.h||''}</td><td class="r"><button class="x" title="Via do cliente" onclick="verVia('${s.id}')">${ic('print','width:16px;height:16px')}</button></td></tr>`}).join('')||'<tr><td colspan="7" class="empty">Nenhuma venda nesse mês</td></tr>'}</table></div>
   </div>
  </div>`;
 };
@@ -1298,7 +1299,7 @@ V.financeiro=()=>{
  </div>
  <div class="card mt"><div class="ct"><div><h3>Equipe · salário e comissão</h3><p>Clique num vendedor pra mudar o salário ou a % de comissão</p></div>${isAdm()?`<button class="btn dark sm" onclick="fVend()">${ic('plus')}Vendedor</button>`:''}</div>
   <div class="tw"><table><tr><th>Vendedor</th><th>Loja</th><th class="r">Vendeu no mês</th><th class="r">Salário fixo</th><th class="r">Comissão</th><th class="r">Comissão no mês</th><th class="r">Total a pagar</th></tr>
-  ${vs.map(v=>{const sv=t.sv.filter(s=>s.vend===v.id),f=sv.reduce((a,s)=>a+s.v,0),c=comV(v,mes);return `<tr class="${isAdm()?'cl':''}" ${isAdm()?`onclick="fVend('${v.id}')"`:''}><td><div style="display:flex;align-items:center;gap:10px"><span class="av" style="width:30px;height:30px;font-size:11px">${ini(v.n)}</span><b>${H(v.n)}</b></div></td><td class="mut">${v.loja}</td><td class="r">${R(f)} <span class="mut">(${sv.length})</span></td><td class="r">${R(v.sal)}</td><td class="r"><span class="chip">${v.com}%</span></td><td class="r">${R(c)}</td><td class="r"><b>${R(+v.sal+c)}</b></td></tr>`}).join('')||'<tr><td colspan="7" class="empty">Nenhum vendedor</td></tr>'}
+  ${vs.map(v=>{const sv=t.sv.filter(s=>s.vend===v.id),f=sv.reduce((a,s)=>a+vEnt(s),0),c=comV(v,mes);return `<tr class="${isAdm()?'cl':''}" ${isAdm()?`onclick="fVend('${v.id}')"`:''}><td><div style="display:flex;align-items:center;gap:10px"><span class="av" style="width:30px;height:30px;font-size:11px">${ini(v.n)}</span><b>${H(v.n)}</b></div></td><td class="mut">${v.loja}</td><td class="r">${R(f)} <span class="mut">(${sv.length})</span></td><td class="r">${R(v.sal)}</td><td class="r"><span class="chip">${v.com}%</span></td><td class="r">${R(c)}</td><td class="r"><b>${R(+v.sal+c)}</b></td></tr>`}).join('')||'<tr><td colspan="7" class="empty">Nenhum vendedor</td></tr>'}
   <tr><td colspan="3"><b>Total</b></td><td class="r"><b>${R(t.sal)}</b></td><td></td><td class="r"><b>${R(t.com)}</b></td><td class="r"><b>${R(t.sal+t.com)}</b></td></tr></table></div></div>
  <div class="g2 mt">${tbl(fx,'Fixa')}${tbl(vr,'Variável')}</div>`;
 };
@@ -1832,7 +1833,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611051300';
+const APP_VER='202611051400';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
