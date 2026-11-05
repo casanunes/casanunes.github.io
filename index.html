@@ -654,13 +654,16 @@ const idx=a=>{const o={};a.forEach(r=>o[SK(r)]=r);return o};
 const skel=()=>({store:{},meta:{'Loja 1':0,'Loja 2':0},prod:[],forn:[],comp:[],vend:[],cli:[],sales:[],orc:[],atac:[],cpag:[],exp:[],users:[],caixa:[],sang:[],cxAb:{},cfg:{tx:{pix:0,deb:1.4,c1:3.1,c6:4.6,c12:6.4},ab:200},acc:'vermelho'});
 function snapAll(){SNAP={};ents().forEach(e=>SNAP[e[0]]=idx(e[2]()));CSNAP=JSON.stringify(cfgRow())}
 async function loadAll(){
+ const oS=S,oCU=CU,first=!CU;
  const q=t=>SB.from(t).select('*').then(r=>{if(r.error)throw r.error;return r.data||[]});
  try{
-  const{data:{user}}=await SB.auth.getUser();
+  let{data:{session}}=await SB.auth.getSession();if(!session&&!first){try{const rr=await SB.auth.refreshSession();session=rr&&rr.data&&rr.data.session}catch(e){}}
+  const user=session&&session.user;if(!user){if(first)return false;throw new Error('sessão')}
   const[pf,cf,fo,ve,pr,cl,vd,pc,ex,sg,cx,cu,vp,cg,av]=await Promise.all(['profiles','config','fornecedores','vendedores','produtos','clientes','vendas','parcelas','despesas','caixa_sangrias','caixa_fechamentos','produtos_custo','vendedores_pagto','carne_pagamentos','atacado_vendas'].map(q));
   S=skel();
   S.users=pf.map(p=>({id:p.id,n:p.nome,user:p.usuario,role:p.perfil,tabs:p.telas||[],lojas:p.lojas||[],vend:p.vendedor_id||'',own:p.so_proprias,lucro:p.ve_lucro,del:p.pode_gerir,atac:p.atacado,ativo:p.ativo,estilo:p.estilo||''}));
   CU=S.users.find(u=>u.id===user.id)||null;
+  if(!CU&&!first){S=oS;CU=oCU;return false}
   if(!CU||CU.ativo===false){toast('Usuário sem acesso. Fale com o administrador.',4000);await SB.auth.signOut();S=skel();CU=null;return false}
   const c=cf[0]||{};S.store={...(c.empresa||{})};if(c.logo){S.store.logo=c.logo;S.store.lw=c.logo_w;S.store.lh=c.logo_h}
   S.cfg={tx:c.taxas||S.cfg.tx,ab:c.abertura??200};S.meta=c.metas||S.meta;S.acc=c.cor||'vermelho';
@@ -671,7 +674,7 @@ async function loadAll(){
   vd.forEach(r=>{const o=fr(r,SM);if(r.tipo==='orc'){o.tipo='orc';S.orc.push(o)}else S.sales.push(o)});
   S.sales.forEach(s=>{const l=pc.filter(p=>p.venda_id===s.id).sort((a,b)=>a.k-b.k);if(l.length)s.parcs=l.map(r=>fr(r,PCM))});
   S.cpag=cg.map(r=>fr(r,CPM));S.atac=av.map(r=>fr(r,AM)).sort((a,b)=>a.n-b.n);S.sales.sort((a,b)=>a.n-b.n);S.orc.sort((a,b)=>a.n-b.n);snapAll();return true;
- }catch(e){toast('Erro ao carregar: '+(e.message||e),5000);return false}
+ }catch(e){S=oS;CU=oCU;if(first)toast('Erro ao carregar: '+(e.message||e),5000);return false}
 }
 let PEND=0,SERR=0;
 function SYNC(){PEND++;SQ=SQ.then(syncGo).then(()=>{SERR=0}).catch(e=>{SERR=1;toast('ERRO AO SALVAR (não feche nem atualize a página): '+(e.message||e)+(/compras|endereco|schema cache|estilo/.test(e.message||'')?' · Falta rodar o arquivo 05_fornecedores.sql no Supabase.':''),20000)}).finally(()=>{PEND--});return SQ}
@@ -1705,7 +1708,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611031930';
+const APP_VER='202611050930';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
@@ -1715,8 +1718,8 @@ async function checaVersao(){try{const r=await fetch('version.json?'+Date.now(),
 checaVersao();setInterval(checaVersao,60000);window.addEventListener('focus',checaVersao);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checaVersao()});
 // atualização entre lojas: a cada 45 s, se a pessoa não estiver no meio de algo
 async function aoVivo(){if(document.hidden||!CU||$('modal').classList.contains('on')||acart.length||PEND>0||SERR||(typeof cart!=='undefined'&&cart&&(cart.items.length||cart.cli||(cart.nc&&(cart.nc.n||cart.nc.tel)))))return;
- try{await SQ;if(PEND>0||SERR)return;const antes=document.activeElement&&document.activeElement.tagName;if(antes==='INPUT'||antes==='SELECT'||antes==='TEXTAREA')return;if(await loadAll())render()}catch(e){}}
-setInterval(aoVivo,45000);
+ try{await SQ;if(PEND>0||SERR)return;const antes=document.activeElement&&document.activeElement.tagName;if(antes==='INPUT'||antes==='SELECT'||antes==='TEXTAREA')return;const h0=JSON.stringify(S);if(await loadAll()&&JSON.stringify(S)!==h0)render()}catch(e){}}
+setInterval(aoVivo,90000);
 </script>
 </body>
 </html>
