@@ -435,6 +435,21 @@ html[data-lay=trilho] .gs{position:fixed}
 .eo.on{border-color:var(--acc)}.eo b{font-size:13.5px}.eo small{font-size:11.5px;color:var(--mut);line-height:1.3}
 .sw{display:flex;height:30px;border-radius:9px;padding:6px;border:1px solid #8883;margin-bottom:4px}.sw i{width:40%;border-radius:5px}
 @media(max-width:700px){.eg{grid-template-columns:repeat(2,1fr)}}
+.gr-kk{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.gr-k small{color:var(--mut);font-size:12.5px;display:block}.gr-k b{display:block;font-size:22px;margin:3px 0 5px;letter-spacing:-.4px}
+.gr-g{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:14px}.gr-g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.gr-g .card h3,.gr-g2 .card h3{margin:0;font-size:17px}.gr-g .card p.mut,.gr-g2 .card p.mut{margin:2px 0 10px;font-size:13px}
+.gr-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.gr-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}.gr-chips button{all:unset;cursor:pointer;background:var(--soft);color:var(--ink2);border-radius:99px;padding:7px 13px;font-size:12.5px;font-weight:600}.gr-chips button.on{background:var(--ink);color:var(--onInk)}
+.gr-big{font-size:30px;font-weight:800;letter-spacing:-.6px;margin:2px 0 4px}
+.gr-g svg text,.gr-g2 svg text{font-size:11px;fill:var(--mut);font-family:inherit}
+.gr-seg{display:flex;height:22px;border-radius:99px;overflow:hidden;margin:6px 0 12px;gap:2px;background:var(--soft)}.gr-seg i{display:block;height:100%}
+.gr-li{display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 0;border-bottom:1px solid var(--line)}.gr-li:last-child{border:0}.gr-li u{width:10px;height:10px;border-radius:3px;flex:none}.gr-li span{flex:1}
+.gr-m{margin:14px 0}.gr-mt{display:flex;justify-content:space-between;gap:8px;font-size:13px;margin-bottom:6px;flex-wrap:wrap}.gr-bar{height:14px;background:var(--soft);border-radius:99px;overflow:hidden}.gr-bar i{display:block;height:100%;border-radius:99px}
+.gr-rk{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}.gr-rk:last-of-type{border:0}.gr-n{width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--onInk);font-size:11px;font-weight:700;display:grid;place-items:center;flex:none}.gr-nm{flex:1;min-width:0}.gr-nm small{display:block;color:var(--mut);font-size:12px}.gr-pc{background:var(--okS,#E4F4EC);color:var(--ok);font-weight:700;border-radius:99px;padding:3px 9px;font-size:12px}.gr-pc.l{background:#FFF1D6;color:#A8741A}
+.gr-up{color:#C2410C;font-weight:700}.gr-dn{color:var(--ok);font-weight:700}
+.gr-tl{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:8px}.gr-tl div{background:var(--soft);border-radius:14px;padding:10px 6px;text-align:center}.gr-tl small{display:block;color:var(--mut);font-size:11.5px}.gr-tl b{font-size:14px}.gr-tl .at{background:#FDECEA}.gr-tl .at b{color:#C0392B}
+@media(max-width:900px){.gr-kk{grid-template-columns:1fr 1fr}.gr-g,.gr-g2{grid-template-columns:1fr}}
 .cmpbox{border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .cmph,.crow{display:grid;grid-template-columns:minmax(150px,1fr) 70px 120px 120px 24px;gap:8px;align-items:center}
 .cpr{font-size:12px;margin:4px 2px 0;font-weight:600}.cpr.up{color:#C2410C}.cpr.dn{color:var(--ok,#2F9E6E)}.cpr.eq,.cpr.nw{color:var(--mut);font-weight:500}
@@ -576,6 +591,7 @@ const IC={
  pdv:'<path d="M3 7h18l-1.6 9.2a2 2 0 0 1-2 1.8H6.6a2 2 0 0 1-2-1.8z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/>',
  pedidos:'<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/>',
  fluxo:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+ graficos:'<path d="M4 20V11M10 20V4M16 20v-7M22 20H2"/>',
  financeiro:'<rect x="2" y="6" width="20" height="13" rx="3"/><path d="M2 10h20M6 15h4"/>',
  estoque:'<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
  clientes:'<circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M16 4a3.5 3.5 0 0 1 0 7M22 20c0-3-2-5-4.5-5.6"/>',
@@ -769,7 +785,7 @@ const isAdm=()=>CU&&CU.role==='admin';
 const can=k=>isAdm()||(CU&&CU[k]);
 const lojasOk=()=>SL?[SL]:isAdm()?LOJAS:LOJAS.filter(l=>CU.lojas.includes(l));
 const atacOk=()=>CU&&(isAdm()||(CU.atac&&(SL?SL==='Loja 1':CU.lojas.includes('Loja 1'))));
-const tabsOk=()=>{const b=isAdm()?[...TABS,['fluxo','Fluxo de caixa'],['admin','Administração']]:TABS.filter(t=>CU.tabs.includes(t[0]));
+const tabsOk=()=>{const b=isAdm()?[...TABS,['fluxo','Fluxo de caixa'],['graficos','Gráficos'],['admin','Administração']]:TABS.filter(t=>CU.tabs.includes(t[0]));
  const r=atacOk()?[...b.filter(t=>t[0]!=='admin'),['atacado','Atacado'],...b.filter(t=>t[0]==='admin')]:b;return [...r,['ajustes','Ajustes']]};
 const inL=(x,l=loja)=>l==='Todas'?lojasOk().includes(x.loja):x.loja===l;
 const ownV=()=>!isAdm()&&CU.own&&CU.vend;
@@ -1315,6 +1331,46 @@ V.clientes=()=>{
 };
 
 // ---------- admin ----------
+let GRK=0,GRP=0;
+const k3=n=>{const a=Math.abs(n),s=n<0?'−':'';return s+(a>=1e6?(a/1e6).toFixed(1).replace('.',',')+' mi':a>=1000?(a/1000).toFixed(1).replace('.',',')+' mil':String(Math.round(a)))};
+function grSpark(v,col){const lo=Math.min(...v),hi=Math.max(...v),rg=(hi-lo)||1;const p=v.map((x,i)=>[i*(100/(v.length-1)),30-(x-lo)/rg*26]);return `<svg viewBox="0 0 100 34" preserveAspectRatio="none" style="width:100%;display:block;height:34px;margin-top:8px"><path d="M${p.map(a=>a.map(n=>n.toFixed(1)).join(' ')).join(' L')}" fill="none" style="stroke:${col}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>`}
+function grMain(v,lab,col){const W=600,H=170,x0=44,lo=Math.min(0,...v),hi=Math.max(...v,1)*1.08,rg=(hi-lo)||1,Y=x=>H+12-(x-lo)/rg*H;
+ let g='';for(let i=0;i<=3;i++){const val=lo+rg*i/3,y=Y(val);g+=`<line x1="${x0}" x2="${W+20}" y1="${y}" y2="${y}" style="stroke:var(--line)"/><text x="${x0-8}" y="${y+4}" text-anchor="end">${k3(val)}</text>`}
+ const pts=v.map((x,i)=>[x0+14+i*(W-x0-8)/(v.length-1),Y(x)]);let d='M'+pts[0].join(' ');for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],cx=(a[0]+b[0])/2;d+=` C${cx} ${a[1]} ${cx} ${b[1]} ${b[0]} ${b[1]}`}
+ const yz=Y(Math.max(lo,0));
+ return `<svg viewBox="0 0 640 214" style="width:100%;display:block"><defs><linearGradient id="grg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" style="stop-color:${col};stop-opacity:.25"/><stop offset="1" style="stop-color:${col};stop-opacity:0"/></linearGradient></defs>${g}<path d="${d} L${pts[pts.length-1][0]} ${yz} L${pts[0][0]} ${yz}Z" fill="url(#grg)"/><path d="${d}" fill="none" style="stroke:${col}" stroke-width="3.2" stroke-linecap="round"/>${pts.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="${i===pts.length-1?6:3.5}" style="fill:${i===pts.length-1?col:'var(--card)'};stroke:${col}" stroke-width="2"/><text x="${p[0]}" y="${H+36}" text-anchor="middle">${lab[i]}</text>`).join('')}</svg>`}
+function grPrevU(c,i){const k=nrm(i.n),ix=S.comp.indexOf(c);let best=null,bd='';S.comp.forEach((o,j)=>{if(o===c)return;if(!(o.d<c.d||(o.d===c.d&&j<ix)))return;(o.it||[]).forEach(x=>{if((i.pid&&x.pid===i.pid)||nrm(x.n)===k){const u=+(x.cr||x.u)||0;if(u>0&&(!best||o.d>=bd)){best=u;bd=o.d}}})});return best}
+V.graficos=()=>{
+ const ks=[];for(let i=5;i>=0;i--)ks.push(prevK(mes,i));const T=ks.map(k=>totals(k)),t=T[5],o=T[4],lab=ks.map(k=>MESL[+k.slice(5)-1].slice(0,3));
+ const SER=[['Faturamento','fat','var(--ink)'],['Custo dos produtos','cmv','var(--acc)'],['Despesas e taxas','gas','#E9B44C'],['Lucro','luc','var(--ok)']];
+ const tile=(l,k,col,inv,ex)=>`<div class="card gr-k"><small>${l}</small><b>${R(t[k])}</b>${dchip(t[k],o[k],inv)}${ex||''}${grSpark(T.map(x=>x[k]),col)}</div>`;
+ const s=SER[GRK],vals=T.map(x=>x[s[1]]);
+ const fat=t.fat,per=v=>fat>0?v/fat*100:0,despesas=t.sal+t.fx+t.vr;
+ const parts=[['Mercadoria',t.cmv,'var(--ink)'],['Despesas',despesas,'#E9B44C'],['Comissões',t.com,'#6C7BF2'],['Taxas do cartão',t.tax,'var(--acc)'],[t.luc<0?'Prejuízo':'Lucro',t.luc,'var(--ok)']];
+ const hj=hoje(),emMes=mes===hj.slice(0,7),dd=+hj.slice(8),dim=new Date(+mes.slice(0,4),+mes.slice(5),0).getDate();
+ const metas=lojasOk().filter(l=>loja==='Todas'||loja===l).map(l=>{const m=S.meta[l]||0,f=totals(mes,l).fat,p=m?f/m*100:0,pj=emMes&&dd>0?f/dd*dim:f;return `<div class="gr-m"><div class="gr-mt"><b>${l}</b><span>${R(f)}${m?' de '+R(m)+' · <b>'+p.toFixed(0)+'%</b>':''}</span></div><div class="gr-bar"><i style="width:${Math.min(100,p)}%;background:${LOJAS.indexOf(l)?'var(--acc)':'var(--ink)'}"></i></div>${m&&emMes&&dd>=10?`<div class="mut" style="font-size:12px;margin-top:5px">No ritmo de hoje chega em ${R(pj)} (${(pj/m*100).toFixed(0)}% da meta)</div>`:''}</div>`}).join('')||'<p class="mut">Sem lojas para mostrar.</p>';
+ const agg={};S.sales.filter(x=>inM(x,mes)&&inL(x)&&visS(x)).forEach(x=>{const sum=x.items.reduce((a,i)=>a+i.q*i.u,0),f=sum>0?x.v/sum:1;x.items.forEach(i=>{const p=P(i.prod),key=GRP?(p.cat||'Outros'):p.n,rev=i.q*i.u*f,a=agg[key]=agg[key]||{rev:0,pr:0,q:0};a.rev+=rev;a.pr+=rev-(+p.c||0)*i.q;a.q+=i.q})});
+ const rank=Object.entries(agg).sort((a,b)=>b[1].pr-a[1].pr).slice(0,6).map(([n,a],i)=>{const m=a.rev>0?a.pr/a.rev*100:0;return `<div class="gr-rk"><span class="gr-n">${i+1}</span><span class="gr-nm">${H(n)}<small>${R(a.pr)} de lucro · ${a.q} ${a.q===1?'peça':'peças'}</small></span><span class="gr-pc ${m<25?'l':''}">${m.toFixed(0)}%</span></div>`}).join('')||'<p class="mut">Ainda não tem vendas neste mês.</p>';
+ const by={};S.comp.filter(c=>c.d.slice(0,7)===mes).forEach(c=>{const f=S.forn.find(x=>x.id===c.f),nm=f?f.n:'—',b=by[nm]=by[nm]||{t:0,bo:0,bn:0};b.t+=+c.t||0;(c.it||[]).forEach(i=>{const a=grPrevU(c,i),u=+(i.cr||i.u)||0;if(a>0&&u>0){b.bo+=i.q*a;b.bn+=i.q*u}})});
+ const forn=Object.entries(by).sort((a,b)=>b[1].t-a[1].t).map(([n,b])=>{const p=b.bo>0?(b.bn/b.bo-1)*100:null;return `<tr><td>${H(n)}</td><td class="r">${R(b.t)}</td><td class="r ${p===null?'':p>0.05?'gr-up':p<-0.05?'gr-dn':''}">${p===null?'<span class="mut">sem comparação</span>':Math.abs(p)<0.05?'igual':(p>0?'▲ ':'▼ ')+Math.abs(p).toFixed(1).replace('.',',')+'%'}</td></tr>`}).join('')||'<tr><td colspan="3" class="mut" style="padding:16px 6px">Nenhum pedido de compra neste mês.</td></tr>';
+ let atras=0;const mk=[];for(let i=0;i<6;i++)mk.push(prevK(hj.slice(0,7),-i));const bk={};mk.forEach(k=>bk[k]=0);let dep=0;
+ S.sales.filter(x=>!x.canc&&visS0(x)&&inL(x)&&x.pag==='Carnê').forEach(x=>(x.parcs||[]).filter(p=>!p.canc).forEach(p=>{const r=prem(p);if(r<=0)return;if(p.venc<hj)atras+=r;else if(bk[p.venc.slice(0,7)]!==undefined)bk[p.venc.slice(0,7)]+=r;else dep+=r}));
+ const tl=`<div class="gr-tl"><div class="at"><small>Atrasado</small><b>${k3(atras)}</b></div>${mk.map(k=>`<div><small>${MESL[+k.slice(5)-1].slice(0,3)}</small><b>${k3(bk[k])}</b></div>`).join('')}${dep>0?`<div><small>Depois</small><b>${k3(dep)}</b></div>`:''}</div>`;
+ const totC=r2(atras+dep+mk.reduce((a,k)=>a+bk[k],0));
+ return head('Gráficos','Como está o dinheiro da loja: quanto entra, quanto custa e quanto sobra')+`
+ <div class="gr-kk">${tile('Faturamento','fat','var(--ink)',false)}${tile('Custo dos produtos','cmv','var(--acc)',true)}${tile('Despesas, comissões e taxas','gas','#E9B44C',true)}${tile('Lucro do mês','luc','var(--ok)',false,t.fat?`<span class="mut" style="font-size:12px;margin-left:6px">margem ${(t.luc/t.fat*100).toFixed(0)}%</span>`:'')}</div>
+ <div class="gr-g">
+  <div class="card"><div class="gr-h"><div><h3>Evolução</h3><p class="mut">Últimos 6 meses · toque para trocar</p></div><div class="gr-chips">${SER.map((x,i)=>`<button class="${i===GRK?'on':''}" onclick="GRK=${i};render()">${x[0]}</button>`).join('')}</div></div><div class="gr-big">${R(vals[5])}</div>${grMain(vals,lab,s[2])}</div>
+  <div class="card"><h3>De cada R$ 100 que entra</h3><p class="mut">Para onde vai o dinheiro</p>${fat>0?`<div class="gr-seg">${parts.map(p=>`<i style="width:${Math.max(0,per(p[1]))}%;background:${p[2]}"></i>`).join('')}</div>${parts.map(p=>`<div class="gr-li"><u style="background:${p[2]}"></u><span>${p[0]}</span><b>R$ ${per(p[1]).toFixed(0)}</b></div>`).join('')}`:'<p class="mut" style="margin-top:14px">Sem faturamento neste mês ainda.</p>'}</div>
+ </div>
+ <div class="gr-g2">
+  <div class="card"><h3>Metas do mês</h3><p class="mut">Quanto cada loja já fez</p>${metas}</div>
+  <div class="card"><div class="gr-h"><div><h3>O que mais deixa lucro</h3><p class="mut">Lucro já descontando o custo do produto</p></div><div class="gr-chips"><button class="${GRP?'':'on'}" onclick="GRP=0;render()">Produtos</button><button class="${GRP?'on':''}" onclick="GRP=1;render()">Categorias</button></div></div>${rank}<p class="mut" style="font-size:12px;margin-top:8px">A porcentagem é a margem. Em laranja: menos de 25%.</p></div>
+ </div>
+ <div class="gr-g2">
+  <div class="card"><h3>Fornecedores</h3><p class="mut">Comprado em ${mlabel(mes)} e quanto o preço mudou comparado ao pedido anterior</p><div class="tw"><table><tr><th>Fornecedor</th><th class="r">Comprado</th><th class="r">Preço vs anterior</th></tr>${forn}</table></div></div>
+  <div class="card"><h3>Carnês a receber</h3><p class="mut">Parcelas que vencem em cada mês</p>${tl}<p class="mut" style="margin-top:10px;font-size:12.5px">Total a receber: <b style="color:var(--ink)">${R(totC)}</b></p></div>
+ </div>`};
 V.admin=()=>{
  const tn=k=>(TABS.find(t=>t[0]===k)||[k,k])[1],st=S.store;
  return head('Administração','Quem acessa o sistema, o que cada um vê e os dados da loja','<span></span>')+`
@@ -1776,7 +1832,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611051230';
+const APP_VER='202611051300';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
