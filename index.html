@@ -722,7 +722,7 @@ async function loadAll0(){
  }catch(e){S=oS;CU=oCU;if(first)toast('Erro ao carregar: '+(e.message||e),5000);return false}
 }
 let PEND=0,SERR=0;
-function SYNC(){PEND++;SQ=SQ.then(syncGo).then(()=>{SERR=0}).catch(e=>{SERR=1;toast('ERRO AO SALVAR (não feche nem atualize a página): '+(e.message||e)+(/compras|endereco|whatsapp|razao|email|schema cache|estilo/.test(e.message||'')?' · Falta rodar o arquivo SQL no Supabase (05 e 06) no Supabase.':''),20000)}).finally(()=>{PEND--});return SQ}
+function SYNC(){PEND++;SQ=SQ.then(()=>Promise.race([syncGo(),new Promise((_,rj)=>setTimeout(()=>rj(new Error('o servidor não respondeu em 25 segundos (internet ou login travado)')),25000))])).then(()=>{SERR=0}).catch(e=>{SERR=1;console.error('sync',e);const m=e&&(e.message||e.details||e.hint)||JSON.stringify(e);toast('ERRO AO SALVAR (não feche nem atualize a página): '+m+(/compras|endereco|whatsapp|razao|email|schema cache|estilo/.test(m)?' · Falta rodar o arquivo SQL no Supabase (05 e 06) no Supabase.':''),60000)}).finally(()=>{PEND--});return SQ}
 const ck=r=>{if(r.error)throw r.error;return r.data};
 async function syncGo(){
  if(!CU)return;
@@ -1910,7 +1910,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611051500';
+const APP_VER='202611051600';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
