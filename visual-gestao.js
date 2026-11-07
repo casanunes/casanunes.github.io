@@ -188,8 +188,9 @@ dialog.vx-sheet svg{width:22px;height:22px}
   /* Botao fixo de atualizar no topo, ao lado do sino */
   function vxBotao() {
     if (document.getElementById('vx-refresh')) return;
-    var sino = [].find.call(document.querySelectorAll('header button, .hr button, .icb'), function (b) { return /notif|sino|bell/i.test(b.outerHTML) || b.classList.contains('icb'); });
-    var lugar = (sino && sino.parentElement) || document.querySelector('header .hr') || document.querySelector('header');
+    /* so os botoes redondos do canto (lua, sino), nunca o menu */
+    var sino = document.querySelector('.hr .icb') || document.querySelector('.icb');
+    var lugar = sino && sino.parentElement;
     if (!lugar) return;
     var b = document.createElement('button'); b.id = 'vx-refresh'; b.type = 'button'; b.className = (sino && sino.className) || 'icb';
     b.title = 'Atualizar o sistema'; b.setAttribute('aria-label', 'Atualizar o sistema');
