@@ -1911,7 +1911,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611071215';
+const APP_VER='202611071225';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
