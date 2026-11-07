@@ -609,7 +609,7 @@ const IC={
  caixa:'<rect x="3" y="10" width="18" height="10" rx="2"/><path d="M7 10V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4M3 15h18"/>',
  swap:'<path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>',ban:'<circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/>',hist:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>',map:'<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
  trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',x:'<path d="M18 6 6 18M6 6l12 12"/>'};
-IC.fornecedores=IC.store;IC.ajustes=IC.admin||IC.store;
+IC.das='<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="m9 15 6-6"/><circle cx="9.5" cy="9.5" r="1"/><circle cx="14.5" cy="14.5" r="1"/>';IC.fornecedores=IC.store;IC.ajustes=IC.admin||IC.store;
 const ic=(k,st='')=>`<svg class="i" viewBox="0 0 24 24" style="${st}">${IC[k]||IC.store}</svg>`;
 const ART={
  'Cama box':['#FCE4E1','<path d="M8 40V22a4 4 0 0 1 4-4h40a4 4 0 0 1 4 4v18"/><path d="M4 40h56v8H4zM8 48v6M56 48v6"/><rect x="14" y="24" width="14" height="8" rx="3"/><rect x="36" y="24" width="14" height="8" rx="3"/>'],
@@ -787,7 +787,7 @@ const isAdm=()=>CU&&CU.role==='admin';
 const can=k=>isAdm()||(CU&&CU[k]);
 const lojasOk=()=>SL?[SL]:isAdm()?LOJAS:LOJAS.filter(l=>CU.lojas.includes(l));
 const atacOk=()=>CU&&(isAdm()||(CU.atac&&(SL?SL==='Loja 1':CU.lojas.includes('Loja 1'))));
-const tabsOk=()=>{const b=isAdm()?[...TABS,['fluxo','Fluxo de caixa'],['graficos','Gráficos'],['admin','Administração']]:TABS.filter(t=>CU.tabs.includes(t[0]));
+const tabsOk=()=>{const b=isAdm()?[...TABS,['fluxo','Fluxo de caixa'],['graficos','Gráficos'],...(SL?[]:[['das','Imposto']]),['admin','Administração']]:TABS.filter(t=>CU.tabs.includes(t[0]));
  const r=atacOk()?[...b.filter(t=>t[0]!=='admin'),['atacado','Atacado'],...b.filter(t=>t[0]==='admin')]:b;return [...r,['ajustes','Ajustes']]};
 const inL=(x,l=loja)=>l==='Todas'?lojasOk().includes(x.loja):x.loja===l;
 const ownV=()=>!isAdm()&&CU.own&&CU.vend;
@@ -1353,6 +1353,125 @@ V.fluxo=()=>{
   <div class="card mt"><div class="ct"><div><h3>Previsão dos próximos 12 meses</h3><p>Cada parcela cai no mês em que o dinheiro entra de verdade</p></div></div>
   <div class="tw"><table><tr><th>Mês</th><th class="r">Carnês</th><th class="r">Cartão de crédito</th><th class="r">Total que entra</th><th class="r">Saídas fixas</th><th class="r">Sobra no mês</th><th class="r">Acumulado</th></tr>${rows}</table></div>
   <p class="mut" style="margin:12px 4px 0">Carnês atrasados entram no mês atual. O cartão de crédito cai parcela por parcela, já descontada a taxa. Pix, dinheiro e débito entram na hora. As saídas contam só salários e despesas fixas lançadas neste mês; comissões, despesas variáveis e compra de mercadoria não entram na conta.</p></div>`};
+// ---------- imposto (DAS · Simples Nacional, Anexo I) · só Administração ----------
+let DAS=null,DASL=0,DASALL=0;
+const dasOk=()=>isAdm()&&!SL;
+const DASF=[[180000,.04,0],[360000,.073,5940],[720000,.095,13860],[1800000,.107,22500],[3600000,.143,87300],[4800000,.19,378000]];
+const dasFx=r=>{const i=DASF.findIndex(f=>r<=f[0]);return i<0?DASF.length-1:i};
+const dasAliq=r=>{if(!(r>0))return DASF[0][1];const f=DASF[dasFx(r)];return (r*f[1]-f[2])/r};
+function dasPascoa(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),x=h+l-7*m+114;return new Date(y,Math.floor(x/31)-1,x%31+1)}
+function dasFeriado(dt){const md=String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');if(['01-01','04-21','05-01','09-07','10-12','11-02','11-15','11-20','12-25'].includes(md))return true;const off=Math.round((dt-dasPascoa(dt.getFullYear()))/864e5);return [-48,-47,-2,60].includes(off)}
+// vence dia 20 do mês seguinte; se não for dia útil, passa para o próximo dia útil
+function dasVenc(k){const d=new Date(+k.slice(0,4),+k.slice(5,7),20);while(d.getDay()===0||d.getDay()===6||dasFeriado(d))d.setDate(d.getDate()+1);return iso(d)}
+const dasK=(k,n)=>{const d=new Date(+k.slice(0,4),+k.slice(5,7)-1+n,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
+const dasML=k=>MESL[+k.slice(5)-1]+'/'+k.slice(2,4);
+// vendas do mês no Gestão pelo valor cheio (competência, igual à contabilidade). Só usado nesta tela.
+function dasGestao(k){let t=0;S.sales.forEach(s=>{if(!s.canc&&inM(s,k))t+=+s.v||0});S.atac.forEach(a=>{if(!a.canc&&a.d.slice(0,7)===k)t+=+a.v||0});return r2(t)}
+async function dasLoad(){if(!dasOk()||DASL)return;DASL=1;try{const r=await SB.from('das_competencias').select('*').order('competencia');if(r.error)throw r.error;DAS=r.data||[]}catch(e){DAS=DAS||[];toast('Não consegui carregar o imposto. Confira a internet.',3500)}DASL=0;if(tab==='das')render()}
+const dasRow=k=>(DAS||[]).find(r=>r.competencia.slice(0,7)===k);
+const dasN=v=>v===null||v===undefined||v===''?null:+v;
+function dasMes(k,memo={}){
+ if(memo[k])return memo[k];
+ const row=dasRow(k),dec=row?dasN(row.receita_bruta):null,ges=dasGestao(k);
+ const base=dec!==null?dec:ges;
+ let r12=row?dasN(row.rbt12):null,r12est=false,r12ok=true;
+ if(r12===null){r12=0;for(let i=1;i<=12;i++){const kk=dasK(k,-i),rr=dasRow(kk),d=rr?dasN(rr.receita_bruta):null;if(d!==null)r12+=d;else{const g=dasGestao(kk);if(g>0){r12+=g;r12est=true}else r12ok=false}}r12=r2(r12)}
+ const aliq=row&&dasN(row.aliquota_efetiva)!==null?+row.aliquota_efetiva:(r12ok?dasAliq(r12):null);
+ const guia=row&&dasN(row.valor_das)!==null;
+ const das=guia?+row.valor_das:(aliq!==null?r2(base*aliq):null);
+ const venc=row&&row.vencimento?row.vencimento:dasVenc(k);
+ return memo[k]={k,row,dec,ges,base,r12,r12est,r12ok,aliq,guia,das,venc,pago:row&&row.pago_em||null,vpago:row?dasN(row.valor_pago):null};
+}
+function dasSt(m,hj,k0){
+ if(m.pago)return ['Pago','ok'];
+ const dd=Math.round((new Date(m.venc+'T12:00')-new Date(hj+'T12:00'))/864e5);
+ if(m.k>=k0)return ['Mês em andamento','gr'];
+ if(m.guia){if(dd<0)return ['Atrasado','bad'];if(dd<=5)return [dd===0?'Vence hoje':'Vence em '+dd+(dd===1?' dia':' dias'),'wa'];return ['A pagar','bl']}
+ if(dd>=0)return [dd<=5?'Lançar guia, vence em '+dd+(dd===1?' dia':' dias'):'Falta lançar a guia',dd<=5?'wa':'bl'];
+ return ['Sem guia lançada','gr'];
+}
+V.das=()=>{
+ if(!dasOk())return head('Imposto (DAS)','Só o administrador vê esta tela','<div></div>');
+ const btn=`<div class="filters"><button class="btn dark" onclick="fDas()">${ic('plus')}Lançar mês</button></div>`;
+ if(!DAS){dasLoad();return head('Imposto (DAS)','Simples Nacional · só o administrador vê','<div></div>')+`<div class="card empty mt">Carregando o imposto...</div>`}
+ const hj=hoje(),k0=hj.slice(0,7),memo={};
+ const tile=(l,v,d,k,acc)=>`<div class="tile ${acc?'acc':''}"><div class="th"><span>${l}</span><i>${ic(k,'width:16px;height:16px')}</i></div><div><div class="tv">${v}</div><div class="td">${d}</div></div></div>`;
+ const k1=DAS.length?DAS[0].competencia.slice(0,7):k0,ks=[];for(let k=k0;k>=k1;k=dasK(k,-1))ks.push(k);
+ const ms=ks.map(k=>dasMes(k,memo));
+ // próxima guia: mês já fechado, sem pagamento, vencimento hoje ou depois (a mais próxima)
+ const prox=ms.filter(m=>m.k<k0&&!m.pago&&m.venc>=hj).sort((a,b)=>a.venc.localeCompare(b.venc))[0];
+ const atr=ms.filter(m=>m.guia&&!m.pago&&m.venc<hj);
+ const cur=ms[0],fx=cur.r12ok?dasFx(cur.r12):0,lim=DASF[fx][0],falta=lim-cur.r12,perc=Math.min(100,cur.r12/lim*100);
+ const pgAno=(DAS||[]).filter(r=>r.pago_em&&r.pago_em.slice(0,4)===hj.slice(0,4));
+ const ddp=prox?Math.round((new Date(prox.venc+'T12:00')-new Date(hj+'T12:00'))/864e5):null;
+ const pct=a=>a===null?'-':(a*100).toFixed(2).replace('.',',')+'%';
+ let avisos='';
+ atr.forEach(m=>{avisos+=`<div class="card mt" style="border:1.5px solid var(--bad)"><div class="ct" style="margin:0"><div><h3 style="color:var(--bad)">Guia de ${dasML(m.k)} atrasada</h3><p>${R(m.das)} · venceu em ${br(m.venc)}. Se já pagou, marque como pago.</p></div><button class="btn dark sm" onclick="fDasPg('${m.k}')">${ic('check')}Marcar pago</button></div></div>`});
+ if(prox&&ddp<=5)avisos+=`<div class="card mt" style="border:1.5px solid var(--warn)"><div class="ct" style="margin:0"><div><h3>DAS de ${dasML(prox.k)} ${ddp===0?'vence hoje':'vence em '+ddp+(ddp===1?' dia':' dias')}</h3><p>${prox.guia?R(prox.das)+' · vencimento '+br(prox.venc):'A guia ainda não foi lançada. Estimativa: '+R(prox.das)+' · vencimento '+br(prox.venc)}</p></div><button class="btn dark sm" onclick="${prox.guia?`fDasPg('${prox.k}')`:`fDas('${prox.k}')`}">${prox.guia?ic('check')+'Marcar pago':ic('plus')+'Lançar guia'}</button></div></div>`;
+ if(cur.r12ok&&perc>=90)avisos+=`<div class="card mt" style="border:1.5px solid var(--warn)"><div class="ct" style="margin:0"><div><h3>Perto de mudar de faixa</h3><p>Faltam ${R(falta)} nos últimos 12 meses para passar de ${R(lim)}. Aí a alíquota do imposto sobe.</p></div></div></div>`;
+ const vis=DASALL?ms:ms.slice(0,13);
+ const rows=vis.map(m=>{const [st,cl]=dasSt(m,hj,k0),dif=m.dec!==null&&m.ges>0?m.ges-m.dec:null;
+  const pode=!m.pago&&m.k<k0&&(m.guia||m.venc>=hj);
+  return `<tr class="cl" onclick="if(!event.target.closest('button'))fDas('${m.k}')"><td><b>${dasML(m.k)}</b>${m.k===k0?' <span class="chip">este mês</span>':''}</td>
+  <td class="r">${m.dec!==null?R(m.dec):'<span class="mut">não declarado</span>'}</td>
+  <td class="r">${m.ges>0?R(m.ges):'<span class="mut">-</span>'}</td>
+  <td class="r">${dif===null?'<span class="mut">-</span>':`<span style="color:var(${Math.abs(dif)<1?'--ok':'--ink2'})">${dif>=0?'+ ':'- '}${R(Math.abs(dif))}</span>`}</td>
+  <td class="r">${pct(m.aliq)}</td>
+  <td class="r">${m.das===null||(!m.guia&&st==='Sem guia lançada')?'<span class="mut">-</span>':m.guia?`<b>${R(m.das)}</b>`:`<span class="mut">${R(m.das)} est.</span>`}</td>
+  <td class="mut">${br(m.venc)}</td>
+  <td><span class="badge ${cl}">${st}</span>${m.pago&&m.vpago!==null?` <span class="mut">${R(m.vpago)}</span>`:''}</td>
+  <td class="r">${pode?`<button class="btn light sm" onclick="fDasPg('${m.k}')">Marcar pago</button>`:''}</td></tr>`}).join('');
+ return head('Imposto (DAS)','Simples Nacional, Anexo I · só o administrador vê',btn)+avisos+`<div class="k6 mt">
+  ${tile(prox?'Próxima guia · '+dasML(prox.k):'Próxima guia',prox?R(prox.das):'Nada a pagar',prox?`vence ${br(prox.venc)}${prox.guia?'':' · estimado'}`:'tudo pago','clock',true)}
+  ${tile('Estimado de '+MESL[+k0.slice(5)-1],cur.das===null?'-':R(cur.das),'vendas até hoje: '+R(cur.ges),'trend')}
+  ${tile('Alíquota efetiva',pct(cur.aliq),cur.r12ok?(fx+1)+'ª faixa do Anexo I':'faltam meses para calcular','das')}
+  ${tile('Pago em '+hj.slice(0,4),R(pgAno.reduce((a,r)=>a+(+r.valor_pago||+r.valor_das||0),0)),pgAno.length+(pgAno.length===1?' guia':' guias'),'coins')}
+ </div>
+ ${cur.r12ok?`<div class="card mt"><div class="ct"><div><h3>Faixa do Simples</h3><p>Receita dos últimos 12 meses: <b>${R(cur.r12)}</b>${cur.r12est?' (usa vendas do Gestão nos meses ainda não declarados)':''}</p></div><span class="chip">${fx+1}ª faixa · até ${R(lim)}</span></div>
+  <div style="height:10px;border-radius:99px;background:var(--soft);overflow:hidden"><div style="height:100%;width:${perc.toFixed(1)}%;border-radius:99px;background:var(${perc>=90?'--warn':'--ink'})"></div></div>
+  <p class="mut" style="margin:10px 2px 0">Faltam ${R(falta)} para a próxima faixa${fx<DASF.length-1?` (alíquota nominal passa de ${(DASF[fx][1]*100).toFixed(1).replace('.',',')}% para ${(DASF[fx+1][1]*100).toFixed(1).replace('.',',')}%)`:''}.</p></div>`:''}
+ <div class="card mt"><div class="ct"><div><h3>Mês a mês</h3><p>Clique num mês para ver ou corrigir os números</p></div></div>
+  <div class="tw"><table><tr><th>Mês</th><th class="r">Declarado</th><th class="r">No Gestão</th><th class="r">Diferença</th><th class="r">Alíquota</th><th class="r">DAS</th><th>Vencimento</th><th>Situação</th><th></th></tr>${rows}</table></div>
+  ${ms.length>13?`<div style="text-align:center;margin-top:12px"><button class="btn light sm" onclick="DASALL=${DASALL?0:1};render()">${DASALL?'Mostrar só os últimos 12 meses':'Mostrar todos os meses'}</button></div>`:''}
+  <p class="mut" style="margin:12px 4px 0">Declarado: o faturamento que a contabilidade informou no PGDAS-D. No Gestão: soma do valor cheio das vendas do mês (lojas 1 e 2 e atacado), que é como a contabilidade declara. Esta coluna é só para conferir e não muda o faturamento das outras telas, onde o carnê continua contando só o que entrou. O DAS é a receita do mês vezes a alíquota efetiva, que sai da receita dos 12 meses anteriores. "est." quer dizer estimado, ainda sem guia. Para lançar um mês novo, clique em Lançar mês ou mande o PDF do PGDAS-D para o Claude.</p></div>`;
+};
+function fDas(k){
+ const novo=!k;k=k||dasK(hoje().slice(0,7),-1);
+ const m=dasMes(k),v=x=>x===null||x===undefined?'':x;
+ modal(`<h2>${novo?'Lançar mês':'Imposto de '+dasML(k)}</h2><div class="f">
+ <label>Mês<input id="dk" type="month" value="${k}" ${novo?'':'disabled'} onchange="fDasMes(this.value)"></label>
+ <label>Faturamento declarado<input id="dr" type="number" step="0.01" value="${v(m.dec)}" placeholder="No Gestão: ${R(m.ges)}"></label>
+ <label>Receita dos 12 meses anteriores<input id="d12" type="number" step="0.01" value="${v(m.row?m.row.rbt12:null)}" placeholder="${m.r12ok?'Calculado: '+R(m.r12):'Está na guia (RBT12)'}"></label>
+ <label>Valor do DAS (guia)<input id="dg" type="number" step="0.01" value="${v(m.guia?m.das:null)}" placeholder="${m.das!==null?'Estimado: '+R(m.das):''}"></label>
+ <label>Vencimento<input id="dv" type="date" value="${m.venc}"></label>
+ <label>Pago em<input id="dp" type="date" value="${v(m.pago)}"></label>
+ <label>Valor pago<input id="dpv" type="number" step="0.01" value="${v(m.vpago)}"></label>
+ ${m.row&&m.row.declaracao_num?`<label class="w">Declaração<input value="${H(m.row.declaracao_num)}${m.row.recibo?' · recibo '+H(m.row.recibo):''}" disabled></label>`:''}
+ </div>${m.row&&m.row.tributos?`<p class="mut" style="margin:6px 2px 0">${Object.entries(m.row.tributos).filter(e=>+e[1]).map(e=>H(e[0]==='CPP'?'INSS (CPP)':e[0])+' '+R(e[1])).join(' · ')}</p>`:''}
+ <p class="mut" style="margin:8px 2px 0">Deixe em branco o que não souber: o sistema calcula. Para desmarcar um pagamento, apague a data de pago.</p>${acts(`sDas('${novo?'':k}')`)}`)}
+function fDasMes(k){if(!k)return;const m=dasMes(k);$('dr').placeholder='No Gestão: '+R(m.ges);$('d12').placeholder=m.r12ok?'Calculado: '+R(m.r12):'Está na guia (RBT12)';$('dg').placeholder=m.das!==null?'Estimado: '+R(m.das):'';$('dv').value=m.venc}
+function fDasPg(k){const m=dasMes(k);modal(`<h2>DAS de ${dasML(k)} pago</h2><div class="f">
+ <label>Pago em<input id="dp" type="date" value="${hoje()}"></label>
+ <label>Valor pago<input id="dpv" type="number" step="0.01" value="${m.das!==null?m.das.toFixed(2):''}"></label></div>
+ <p class="mut" style="margin:8px 2px 0">${m.guia?'Guia de '+R(m.das)+', vencimento '+br(m.venc)+'.':'Ainda não tem guia lançada para este mês; o valor sugerido é estimado.'} Se pagou com atraso, coloque o valor com multa e juros.</p>${acts(`sDasPg('${k}')`)}`)}
+async function dasSave(row,msg){
+ row.atualizado_em=new Date().toISOString();
+ try{const r=await SB.from('das_competencias').upsert(row,{onConflict:'competencia'}).select().single();if(r.error)throw r.error;
+  const i=DAS.findIndex(x=>x.competencia===r.data.competencia);if(i>=0)DAS[i]=r.data;else{DAS.push(r.data);DAS.sort((a,b)=>a.competencia.localeCompare(b.competencia))}
+  close_();render();toast(msg)}catch(e){toast('Não salvou: '+(e.message||'erro'),4000)}}
+function sDas(k0){
+ const k=k0||$('dk').value;if(!k)return toast('Escolha o mês');
+ const n=id=>{const x=$(id).value.trim();return x===''?null:r2(+x.replace(',','.'))};
+ const old=dasRow(k),row={competencia:k+'-01',receita_bruta:n('dr'),rbt12:n('d12'),valor_das:n('dg'),vencimento:$('dv').value||dasVenc(k),pago_em:$('dp').value||null,valor_pago:n('dpv')};
+ if(row.pago_em&&row.valor_pago===null)row.valor_pago=row.valor_das;
+ if(!row.pago_em)row.valor_pago=null;
+ if(row.rbt12!==null)row.aliquota_efetiva=Math.round(dasAliq(row.rbt12)*1e6)/1e6;else if(old&&old.rbt12===null)row.aliquota_efetiva=null;
+ if(!old){row.origem='manual';row.anexo='I'}
+ dasSave(row,'Imposto de '+dasML(k)+' salvo');
+}
+function sDasPg(k){const d=$('dp').value;if(!d)return toast('Coloque a data do pagamento');const x=$('dpv').value.trim();
+ const row={competencia:k+'-01',pago_em:d,valor_pago:x===''?null:r2(+x.replace(',','.'))};if(!dasRow(k)){row.origem='manual';row.anexo='I';row.vencimento=dasVenc(k)}
+ dasSave(row,'DAS de '+dasML(k)+' marcado como pago')}
 V.financeiro=()=>{
  const t=totals(mes),o=totals(prevK(mes)),cl=can('lucro');
  const vs=S.vend.filter(v=>inL(v)&&(!ownV()||v.id===CU.vend));
@@ -1773,7 +1892,7 @@ async function login(){const u=$('lu').value.trim().toLowerCase(),p=$('lp').valu
  if(LSEL!=='adm'&&x.role!=='admin'&&!x.lojas.includes(LSEL))return no('Esse usuário não é da '+LSEL);
  SL=LSEL==='adm'?null:LSEL;try{localStorage.setItem('cn-gestao-sess2',JSON.stringify({l:SL}))}catch(e){}
  LSEL=null;tab=SL&&!isAdm()?'pdv':'geral';loja=SL||'Todas';cart=null;render()}
-async function logout(){await SB.auth.signOut();S=skel();CU=null;SL=null;LSEL=null;cart=null;try{localStorage.removeItem('cn-gestao-sess2')}catch(e){}close_();render()}
+async function logout(){await SB.auth.signOut();DAS=null;S=skel();CU=null;SL=null;LSEL=null;cart=null;try{localStorage.removeItem('cn-gestao-sess2')}catch(e){}close_();render()}
 
 // ---------- fotos ----------
 function resizeImg(file,max,cb){const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{let w=im.width,h=im.height;const k=Math.min(1,max/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k);const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(im,0,0,w,h);cb(c.toDataURL('image/jpeg',.82),w,h)};im.onerror=()=>toast('Não consegui abrir essa imagem');im.src=fr.result};fr.readAsDataURL(file)}
@@ -1911,7 +2030,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611071225';
+const APP_VER='202611071545';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
