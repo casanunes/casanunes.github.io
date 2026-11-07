@@ -1911,7 +1911,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611071130';
+const APP_VER='202611071215';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
@@ -1924,5 +1924,6 @@ async function aoVivo(){if(document.hidden||!CU||$('modal').classList.contains('
  try{await SQ;if(PEND>0||SERR)return;const antes=document.activeElement&&document.activeElement.tagName;if(antes==='INPUT'||antes==='SELECT'||antes==='TEXTAREA')return;const h0=JSON.stringify(S);if(await loadAll()&&JSON.stringify(S)!==h0)render()}catch(e){}}
 setInterval(aoVivo,90000);
 </script>
+<script src="visual-gestao.js" defer></script>
 </body>
 </html>
