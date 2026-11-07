@@ -696,7 +696,8 @@ const ents=()=>ENT.filter(e=>!e[4]||(e[4]===2?(CU.role==='admin'||CU.atac):CU.lu
 let SNAP={},CSNAP='',SQ=Promise.resolve();
 const idx=a=>{const o={};a.forEach(r=>o[SK(r)]=r);return o};
 const skel=()=>({store:{},meta:{'Loja 1':0,'Loja 2':0},prod:[],forn:[],comp:[],vend:[],cli:[],sales:[],orc:[],atac:[],cpag:[],exp:[],users:[],caixa:[],sang:[],cxAb:{},cfg:{tx:{pix:0,deb:1.4,c1:3.1,c6:4.6,c12:6.4},ab:200},acc:'vermelho'});
-function snapAll(){SNAP={};ents().forEach(e=>SNAP[e[0]]=idx(e[2]()));CSNAP=JSON.stringify(cfgRow())}
+const snapc=o=>{const r={};for(const k in o)r[k]=JSON.parse(JSON.stringify(o[k]));return r};
+function snapAll(){SNAP={};ents().forEach(e=>SNAP[e[0]]=snapc(idx(e[2]())));CSNAP=JSON.stringify(cfgRow())}
 let LAP=null;function loadAll(){if(LAP)return LAP;return LAP=loadAll0().finally(()=>{LAP=null})}
 async function loadAll0(){
  const oS=S,oCU=CU,first=!CU;
@@ -748,7 +749,7 @@ async function syncGo(){
    const up=[...nw,...ch];if(up.length)ck(await SB.from(t).upsert(up,{onConflict:oc||'id'}));
   }
   if(del.length)ck(await SB.from(t).delete().in('id',del));
-  SNAP[k]=cur;
+  SNAP[k]=snapc(cur);
  }
  if(CU.role==='admin'){const c=JSON.stringify(cfgRow());if(c!==CSNAP){ck(await SB.from('config').update(cfgRow()).eq('id',1));CSNAP=c}}
 }
@@ -1910,7 +1911,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611051600';
+const APP_VER='202611071130';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
