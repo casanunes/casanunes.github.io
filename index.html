@@ -541,6 +541,7 @@ html:is([data-lay=lateral],[data-lay=denso],[data-lay=direita]) nav.top button{f
   <nav class="top" id="nav"></nav>
   <div class="hr">
    <button class="icb" id="thm" onclick="toggleDark()" title="Modo escuro"></button>
+   <button class="icb" id="olho" onclick="toggleOculto()" title="Esconder valores" aria-label="Esconder valores"></button>
    <button class="icb" onclick="go('pedidos');pedF='entregar';render()" title="Entregas pendentes"><svg class="i" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="dot" id="bell" style="display:none"></span></button>
    <div class="me" id="me"></div>
    <button class="icb" onclick="logout()" title="Sair"><svg class="i" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
@@ -563,6 +564,21 @@ const LOGO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDA
 const LG=()=>S.store.logo||LOGO,LGW=()=>S.store.logo?S.store.lw:300,LGH=()=>S.store.logo?S.store.lh:300;
 let DARK=false;try{DARK=localStorage.getItem('cn-dark')==='1'}catch(e){}
 function toggleDark(){DARK=!DARK;try{localStorage.setItem('cn-dark',DARK?'1':'0')}catch(e){}applyAcc();render()}
+/* Olho: esconde os valores em R$ so na tela. Nao mexe nos dados, no PDF, na impressao nem no texto do WhatsApp. */
+let OCULTO=false;try{OCULTO=localStorage.getItem('cn-oculto')==='1'}catch(e){}
+const OC_RE=/R\$\s?[-+]?\s?\d[\d.]*(,\d{1,2})?(\s?mil)?/g,OC_ORIG=new WeakMap();
+function ocultarEm(raiz){if(!raiz)return;const w=document.createTreeWalker(raiz,NodeFilter.SHOW_TEXT);let n;
+ while((n=w.nextNode())){const t=n.nodeValue;if(!t)continue;const p=n.parentElement;if(p&&p.closest('#printArea,script,style'))continue;
+  let novo=t.replace(OC_RE,'R$ ••••');
+  if(p&&p.closest('.yax')&&/^\s*\d+k\s*$/.test(t))novo='';
+  if(novo!==t){if(!OC_ORIG.has(n))OC_ORIG.set(n,t);n.nodeValue=novo}}}
+function mostrarEm(raiz){if(!raiz)return;const w=document.createTreeWalker(raiz,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode())){if(OC_ORIG.has(n)){n.nodeValue=OC_ORIG.get(n);OC_ORIG.delete(n)}}}
+function olhoIcone(){const b=document.getElementById('olho');if(!b)return;b.title=OCULTO?'Mostrar valores':'Esconder valores';b.setAttribute('aria-label',b.title);
+ b.innerHTML=OCULTO?'<svg class="i" viewBox="0 0 24 24"><path d="M9.9 4.2A10.4 10.4 0 0 1 12 4c5 0 9 4 10 8a12.5 12.5 0 0 1-2.2 3.9M6.6 6.6A12.6 12.6 0 0 0 2 12c1 4 5 8 10 8a10 10 0 0 0 5.4-1.6"/><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"/><path d="M2 2l20 20"/></svg>':'<svg class="i" viewBox="0 0 24 24"><path d="M2 12s4-8 10-8 10 8 10 8-4 8-10 8-10-8-10-8z"/><circle cx="12" cy="12" r="3"/></svg>'}
+function toggleOculto(){OCULTO=!OCULTO;try{localStorage.setItem('cn-oculto',OCULTO?'1':'0')}catch(e){}olhoIcone();
+ ['view','mbox','gres'].forEach(id=>OCULTO?ocultarEm(document.getElementById(id)):mostrarEm(document.getElementById(id)))}
+new MutationObserver(()=>{if(OCULTO)['view','mbox','gres'].forEach(id=>ocultarEm(document.getElementById(id)))}).observe(document.documentElement,{childList:true,subtree:true});
+olhoIcone();document.addEventListener('DOMContentLoaded',olhoIcone);
 const W1=[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500],W2=[278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,333,400,584,333,333,333,611,556,278,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,584,611,611,611,611,611,556,611,556];
 const $=id=>document.getElementById(id);
 const R=v=>'R$ '+(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -2055,7 +2071,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611091700';
+const APP_VER='202611111000';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
