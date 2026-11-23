@@ -1218,6 +1218,23 @@ function doReceber(id){
  S.cpag.push({id:uid(),vid:s.id,d,v,fp,loja:L,u:CU.n});
  const cl=S.cli.find(x=>x.id===s.cli),pv=+$('rcpv').value;if(cl&&pv>0)cl.pv=pv;
  logA(s,`Recebido ${R(v)} do carnê em ${fp}`);save();close_();render();toast('Recebimento registrado')}
+function refazCarne(s){
+ (s.parcs||[]).forEach(p=>{if(!p.canc&&(p.vp||0)>0){p.vp=0;p.pago=null;p.fp='';p.u=null;p.loja=null}});
+ const pg=S.cpag.filter(x=>x.vid===s.id).map((x,i)=>({x,i})).sort((a,b)=>a.x.d.localeCompare(b.x.d)||a.i-b.i).map(o=>o.x);
+ for(const x of pg){let rest=r2(x.v);for(const p of openPs(s)){if(rest<=0.004)break;const v=Math.min(rest,prem(p));p.vp=r2((p.vp||0)+v);rest=r2(rest-v);p.fp=x.fp;p.u=x.u;p.loja=x.loja;p.adi=null;if(prem(p)<=0)p.pago=x.d}}}
+function fEditPag(pid){const x=S.cpag.find(o=>o.id===pid);if(!x)return;const s=S.sales.find(o=>o.id===x.vid),c=C(s.cli);
+ modal(`<h2>Corrigir pagamento</h2><p class="mut" style="margin-bottom:14px">${H(c.n)} · pedido #${String(s.n).padStart(5,'0')} · lançado em ${br(x.d)} por ${H(x.u||'—')}. Ao salvar, o sistema refaz as parcelas com o valor certo.</p>
+ <div class="f"><label>Valor certo (R$)<input id="epv" type="number" step="0.01" value="${x.v}"></label><label>Data do pagamento<input id="epd" type="date" value="${x.d}"></label>
+ <label class="w">Forma de pagamento<select id="epf">${['Dinheiro','Pix','Cartão de débito','Cartão de crédito'].map(f=>`<option ${f===x.fp?'selected':''}>${f}</option>`).join('')}</select></label></div>
+ <div class="acts"><button class="btn light" style="margin-right:auto;color:var(--bad)" onclick="doApagaPag('${pid}')">Apagar pagamento</button><button class="btn light" onclick="fReceber('${s.id}')">Voltar</button><button class="btn dark" onclick="doEditPag('${pid}')">Salvar correção</button></div>`)}
+function doEditPag(pid){const i=S.cpag.findIndex(o=>o.id===pid);if(i<0)return;const x=S.cpag[i],s=S.sales.find(o=>o.id===x.vid),v=r2(+$('epv').value),d=$('epd').value,fp=$('epf').value;
+ if(!(v>0))return toast('Coloca o valor certo (para tirar o pagamento, use "Apagar pagamento")',3500);if(!d)return toast('Coloca a data');
+ const tot=r2(s.parcs.filter(p=>!p.canc).reduce((a,p)=>a+p.v,0)),velho=r2(s.parcs.filter(p=>!p.canc&&p.pago&&!p.vp).reduce((a,p)=>a+p.v,0)),outros=r2(S.cpag.filter(o=>o.vid===s.id&&o.id!==pid).reduce((a,o)=>a+o.v,0));
+ if(velho+outros+v>tot+0.004)return toast('Com esse valor passa do total do carnê (dá no máximo '+R(tot-velho-outros)+')',4000);
+ S.cpag[i]={...x,id:uid(),v,d,fp};refazCarne(s);logA(s,`Pagamento corrigido: ${R(x.v)} em ${br(x.d)} virou ${R(v)} em ${br(d)}`);save();render();toast('Pagamento corrigido');fReceber(s.id,1)}
+function doApagaPag(pid){const x=S.cpag.find(o=>o.id===pid);if(!x)return;const s=S.sales.find(o=>o.id===x.vid);
+ if(!confirm('Apagar o pagamento de '+R(x.v)+' do dia '+br(x.d)+'?'))return;
+ S.cpag=S.cpag.filter(o=>o.id!==pid);refazCarne(s);logA(s,`Pagamento apagado: ${R(x.v)} de ${br(x.d)}`);save();render();toast('Pagamento apagado');fReceber(s.id,1)}
 //#CARNE-END
 const atrasoTxt=old=>{const d=Math.floor((new Date(hoje())-new Date(old))/864e5),m=Math.floor(d/30);return m>=1?`${m} ${m>1?'meses':'mês'} (${d} dias)`:`${d} dia${d>1?'s':''}`};
 V.carne=()=>{
@@ -1261,16 +1278,16 @@ V.carne=()=>{
 function prevRec(id){const s=S.sales.find(x=>x.id===id),v=r2(+$('rcv').value);let rest=v;const out=[];
  for(const p of openPs(s)){if(rest<=0.004)break;const x=Math.min(rest,prem(p));rest=r2(rest-x);out.push(`${p.k}ª parcela: ${R(x)} ${x>=prem(p)-0.004?'(quita)':`(ainda faltam ${R(prem(p)-x)})`}`)}
  $('rcp').innerHTML=v>0?out.join('<br>')+(rest>0.004?`<br><b style="color:var(--bad)">Passa ${R(rest)} do que falta no carnê</b>`:''):''}
-function fReceber(id){const s=S.sales.find(x=>x.id===id),c=C(s.cli),ps=openPs(s);
- if(!ps.length)return toast('Esse carnê já está todo pago');
- const falta=r2(ps.reduce((a,p)=>a+prem(p),0)),sug=Math.min(falta,c.pv>0?c.pv:prem(ps[0])),hist=S.cpag.filter(x=>x.vid===id).sort((a,b)=>b.d.localeCompare(a.d));
+function fReceber(id,force){const s=S.sales.find(x=>x.id===id),c=C(s.cli),ps=openPs(s);
+ if(!ps.length&&!(force&&isAdm()&&S.cpag.some(x=>x.vid===id))){close_();return toast('Esse carnê já está todo pago')}
+ const falta=r2(ps.reduce((a,p)=>a+prem(p),0)),sug=ps.length?Math.min(falta,c.pv>0?c.pv:prem(ps[0])):0,hist=S.cpag.filter(x=>x.vid===id).sort((a,b)=>b.d.localeCompare(a.d));
  modal(`<h2>Receber do carnê</h2><p class="mut" style="margin-bottom:14px">${H(c.n)} · pedido #${String(s.n).padStart(5,'0')} · falta ${R(falta)} em ${ps.length} parcela${ps.length>1?'s':''}</p>
  <div class="f"><label>Valor recebido (R$)<input id="rcv" type="number" step="0.01" value="${sug}" oninput="prevRec('${id}')"></label><label>Data do pagamento<input id="rcd" type="date" value="${hoje()}"></label>
  <label>Forma de pagamento<select id="rcf">${['Dinheiro','Pix','Cartão de débito','Cartão de crédito'].map(x=>`<option>${x}</option>`).join('')}</select></label>
  <label>Parcela combinada deste cliente (R$)<input id="rcpv" type="number" step="0.01" value="${c.pv||''}" placeholder="Ex.: 200"></label>
  <div class="w mut" id="rcp"></div></div>
- ${hist.length?`<div class="sec">Pagamentos já feitos</div><div class="mut" style="line-height:1.7">${hist.map(x=>`${br(x.d)} · <b>${R(x.v)}</b> · ${H(PAGS[x.fp]||x.fp||'')} · ${H(x.u||'')}`).join('<br>')}</div>`:''}
- <div class="acts"><button class="btn light" onclick="close_()">Cancelar</button><button class="btn dark" onclick="doReceber('${id}')">Confirmar recebimento</button></div>`);prevRec(id)}
+ ${hist.length?`<div class="sec">Pagamentos já feitos</div><div class="mut" style="line-height:1.7">${hist.map(x=>`<div style="display:flex;align-items:center;gap:8px;justify-content:space-between"><span>${br(x.d)} · <b>${R(x.v)}</b> · ${H(PAGS[x.fp]||x.fp||'')} · ${H(x.u||'')}</span>${isAdm()?`<button class="btn light sm" onclick="fEditPag('${x.id}')">Corrigir</button>`:''}</div>`).join('')}</div>`:''}
+ <div class="acts"><button class="btn light" onclick="close_()">Cancelar</button>${ps.length?`<button class="btn dark" onclick="doReceber('${id}')">Confirmar recebimento</button>`:''}</div>`);prevRec(id)}
 function fReparc(id){const s=S.sales.find(x=>x.id===id),c=C(s.cli),ps=openPs(s);if(!ps.length)return toast('Esse carnê já está todo pago');
  const falta=r2(ps.reduce((a,p)=>a+prem(p),0));
  modal(`<h2>Valor da parcela</h2><p class="mut" style="margin-bottom:14px">${H(c.n)} · pedido #${String(s.n).padStart(5,'0')} · falta ${R(falta)}. As parcelas em aberto são refeitas com o valor que você combinar. O que já foi pago não muda.</p>
@@ -2072,7 +2089,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611201030';
+const APP_VER='202611231000';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
