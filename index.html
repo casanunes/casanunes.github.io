@@ -239,6 +239,15 @@ html.dark .art:not(:has(img)),html.dark .th:not(:has(img)){filter:brightness(.8)
 .otot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding:12px 0;font-weight:600}
 .otot b{font-size:19px;letter-spacing:-.4px}
 .ob{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.oent{background:var(--soft);border-radius:14px;padding:12px 14px;margin-top:12px;font-size:13px;line-height:1.45}
+.oent .eh{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
+.oent .eh span{margin-left:auto;text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink2);font-weight:600}
+.oent .e1{font-size:14.5px;font-weight:700;color:var(--ink)}
+.oent .e2{color:var(--ink2)}
+.oent .eref{margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);color:var(--ink2)}.oent .eref b{color:var(--ink)}
+.oent .etel{margin-top:6px;color:var(--ink2)}
+.oent .eacts{display:flex;gap:8px;margin-top:10px}.oent .eacts .btn{flex:1;justify-content:center}
+.oent.vazio .e1{font-weight:600;color:var(--bad)}
 .cityrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 /* geral */
 .k6{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
@@ -850,8 +859,8 @@ function msgPed(s){const c=C(s.cli),orc=s.tipo==='orc',N=String(s.n).padStart(5,
  t+=`\n\nSegue o PDF do ${orc?'orçamento':'seu pedido'} em anexo.\nQualquer dúvida é só responder aqui! 🏠`;return t}
 function msgEnt(s){const c=C(s.cli);return `Olá, ${first(c.n)}! Aqui é da ${S.store.nome}. Sua entrega do pedido nº ${String(s.n).padStart(5,'0')} (${dsc(s)}) está prevista para ${br(s.ent.d)}, no endereço ${s.ent.end?s.ent.end+', ':''}${s.ent.cid}. Vai ter alguém pra receber? Qualquer coisa é só responder aqui.`}
 const PIX={chave:'11998427517',nome:'Kaiky Barbosa Nunes',banco:'Itaú'};
-function msgParc(s,p){const c=C(s.cli),ps=(s.parcs||[]).filter(x=>!x.canc),pago=ps.reduce((a,x)=>a+paidOf(x),0),falta=ps.reduce((a,x)=>a+prem(x),0),o=ps.find(x=>x.k===p.k),val=o&&prem(o)>0?prem(o):p.v;
- return `Olá, ${first(c.n)}! Tudo bem? 😊\nAqui é da *${S.store.nome||'Casa Nunes'}*.\n\nPassando para lembrar do seu carnê (pedido nº ${String(s.n).padStart(5,'0')}):\n\n📌 *Parcela ${p.k} de ${ps.length}:* ${R(val)}\n📅 Vencimento: ${br(p.venc)}\n`+(pago>0.004?`💰 Já pago: ${R(pago)}\n`:'')+`🔎 Falta no total: ${R(falta)}\n\n💳 *Pagar por Pix:*\nChave (celular): *${PIX.chave}*\nNome: ${PIX.nome} · ${PIX.banco}\n\nSe já pagou, pode desconsiderar.\nSe precisar combinar outra data ou valor, é só me avisar. Obrigado! 🙏`}
+function msgParc(s,p){const c=C(s.cli),ps=(s.parcs||[]).filter(x=>!x.canc),pago=ps.reduce((a,x)=>a+paidOf(x),0),falta=ps.reduce((a,x)=>a+prem(x),0),val=Math.min(+p.v||falta,falta);
+ return `Olá, ${first(c.n)}! Tudo bem? 😊\nAqui é da *${S.store.nome||'Casa Nunes'}*.\n\nPassando para lembrar do seu carnê (pedido nº ${String(s.n).padStart(5,'0')}):\n\n📌 *Parcela:* ${R(val)}\n`+(pago>0.004?`💰 Já pago: ${R(pago)}\n`:'')+`🔎 Falta no total: ${R(falta)}\n\n💳 *Pagar por Pix:*\nChave (celular): *${PIX.chave}*\nNome: ${PIX.nome} · ${PIX.banco}\n\nSe já pagou, pode desconsiderar.\nSe precisar combinar outro valor, é só me avisar. Obrigado! 🙏`}
 function prevK(k,n=1){const d=new Date(+k.slice(0,4),+k.slice(5)-1-n,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
 const mlabel=k=>MESL[+k.slice(5)-1]+' de '+k.slice(0,4);
 const pct=(a,b)=>b?(a-b)/Math.abs(b)*100:null;
@@ -1059,6 +1068,16 @@ V.pedidos=()=>{
 const oav=(s,c)=>{const l2=s.loja==='Loja 2';return `<div class="oav" style="background:${l2?'var(--accS)':'var(--ink)'};color:${l2?'var(--acc)':'var(--onInk)'}">${ini(c.n)}</div>`};
 const itTbl=s=>`<table class="oit"><tr><th>Itens</th><th class="r">Qtd</th><th class="r">Valor</th></tr>${s.items.slice(0,3).map(i=>`<tr><td>${H(P(i.prod).n)}</td><td class="r">${i.q}</td><td class="r">${R(i.q*i.u)}</td></tr>`).join('')}${s.desc?`<tr><td class="mut">Desconto</td><td></td><td class="r mut">- ${R(s.desc)}</td></tr>`:''}</table>${s.items.length>3?`<div class="omore">+${s.items.length-3} itens</div>`:''}`;
 const dlong=d=>{const x=new Date(d+'T12:00');return ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][x.getDay()]+', '+br(d)};
+function entBox(s,c){if(!s.ent||s.canc)return '';const e=endParts(s.ent.end),cid=s.ent.cid||'';
+ const l1=[e.r,e.nu].filter(Boolean).join(', '),l2=[e.b,cid].filter(Boolean).join(' · ');
+ const head=`<div class="eh">${ic('truck','width:13px;height:13px')}Entrega<span>${s.ent.st==='Entregue'?'Entregue em '+brs(s.ent.d):dlong(s.ent.d)}</span></div>`;
+ if(!l1&&!e.b)return `<div class="oent vazio">${head}<div class="e1">Sem endereço cadastrado</div><div class="e2">${H(cid)} · toque em "Editar entrega" para colocar</div></div>`;
+ const q=encodeURIComponent([l1,e.b,cid,'SP'].filter(Boolean).join(', '));
+ const txt=[l1,e.b,e.co,cid,e.ref?'Ref.: '+e.ref:''].filter(Boolean).join(' - ');
+ return `<div class="oent">${head}<div class="e1">${H(l1||e.b)}</div>${l1&&l2?`<div class="e2">${H(l2)}</div>`:''}${e.co?`<div class="e2">${H(e.co)}</div>`:''}
+  ${e.ref?`<div class="eref"><b>Referência:</b> ${H(e.ref)}</div>`:''}${c.tel?`<div class="etel">${H(c.n.split(' ')[0])} · ${H(c.tel)}</div>`:''}
+  <div class="eacts"><a class="btn light sm" href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">${ic('map','width:15px;height:15px')}Abrir no Maps</a><button class="btn light sm" onclick='copEnd(${JSON.stringify(txt).replace(/'/g,"&#39;")})'>Copiar endereço</button></div></div>`}
+function copEnd(t){try{navigator.clipboard.writeText(t).then(()=>toast('Endereço copiado'),()=>toast(t,6000))}catch(e){toast(t,6000)}}
 function card(s){
  const c=C(s.cli),st=stOf(s),ico=st[1]==='ok'?'check':st[1]==='wa'?'clock':st[1]==='bad'?'ban':'store';
  const sl=s.canc?'Cancelado em '+brs(s.canc.d):s.ent?(s.ent.st==='Entregue'?'Entregue em '+brs(s.ent.d):'Previsão '+brs(s.ent.d)+' · '+s.ent.cid):'Cliente levou na hora';
@@ -1066,6 +1085,7 @@ function card(s){
  return `<div class="oc ${s.canc?'canc':''}" data-q="${H((c.n+' '+s.n+' '+dsc(s)).toLowerCase())}"><div class="oh">${oav(s,c)}<div><b>${H(c.n)}</b><small>Pedido #${String(s.n).padStart(5,'0')} / ${s.loja}</small></div>
   <div class="bx"><span class="badge ${st[1]}">${ic(ico)}${st[0]}</span><small class="st ${st[1]}">${sl}</small></div></div>
   <div class="od"><span>${dlong(s.d)}</span><span>${s.h||''}</span></div>
+  ${entBox(s,c)}
   ${itTbl(s)}
   ${s.canc?`<div class="mot"><b>Motivo:</b> ${H(s.canc.mot||'—')} · por ${H(s.canc.u)}</div>`:''}
   ${s.trocas&&s.trocas.length?`<div class="mut" style="margin:4px 0">${ic('swap','width:13px;height:13px;vertical-align:-2px')} ${s.trocas.length} troca${s.trocas.length>1?'s':''} feita${s.trocas.length>1?'s':''}</div>`:''}
@@ -1163,9 +1183,9 @@ function doEdit(){edRead();const s=S.sales.find(x=>x.id===EP.id);if(!s)return;
 function fEnt(id){const s=S.sales.find(x=>x.id===id);if(!s)return;const e=s.ent||{cid:CIDADES[0],end:'',d:iso(new Date(Date.now()+2*864e5)),st:'Agendada'};
  modal(`<h2>Editar entrega · pedido #${String(s.n).padStart(5,'0')}</h2><div class="f">
  <label class="w">Como o cliente recebe<select id="et" onchange="$('ebox').style.display=this.value==='ent'?'':'none'">${opt([['ret','Retirou na loja'],['ent','Entrega na casa do cliente']],s.ent?'ent':'ret')}</select></label></div>
- <div id="ebox" class="f" style="display:${s.ent?'':'none'};margin-top:10px"><label>Cidade<select id="ec">${opt(CIDADES,e.cid)}</select></label><label>Data<input id="ed" type="date" value="${e.d||''}"></label><label class="w">Endereço (rua, número, bairro)<input id="ee" value="${H(e.end||'')}"></label><label class="w">Situação<select id="es">${opt([['Agendada','A entregar'],['Entregue','Já entregue']],e.st||'Agendada')}</select></label></div>${acts("sEnt('"+id+"')")}`)}
+ <div id="ebox" class="f" style="display:${s.ent?'':'none'};margin-top:10px"><label>Cidade<select id="ec">${opt(CIDADES,e.cid)}</select></label><label>Data<input id="ed" type="date" value="${e.d||''}"></label>${(()=>{const p=endParts(e.end);return `<label>Rua<input id="eer" value="${H(p.r)}" placeholder="Ex.: Rua das Flores"></label><label>Número<input id="enu" value="${H(p.nu)}" placeholder="123"></label><label>Bairro<input id="eba" value="${H(p.b)}" placeholder="Ex.: Centro"></label><label>Complemento<input id="eco" value="${H(p.co)}" placeholder="Casa 2, apto 31"></label><label class="w">Ponto de referência<input id="erf" value="${H(p.ref)}" placeholder="Ex.: em frente à padaria"></label>`})()}<label class="w">Situação<select id="es">${opt([['Agendada','A entregar'],['Entregue','Já entregue']],e.st||'Agendada')}</select></label></div>${acts("sEnt('"+id+"')")}`)}
 function sEnt(id){const s=S.sales.find(x=>x.id===id);if(!s)return;const t=$('et').value;
- if(t==='ent')s.ent={cid:$('ec').value,end:$('ee').value.trim(),d:$('ed').value||hoje(),st:$('es').value};else s.ent=null;
+ if(t==='ent')s.ent={cid:$('ec').value,end:endJoin({r:$('eer').value,nu:$('enu').value,b:$('eba').value,co:$('eco').value,ref:$('erf').value}),d:$('ed').value||hoje(),st:$('es').value};else s.ent=null;
  logA(s,t==='ent'?'Entrega editada':'Marcado como retirado na loja');save();close_();render();toast('Entrega atualizada')}
 function entregue(id){const s=S.sales.find(x=>x.id===id);s.ent.st='Entregue';s.ent.d=hoje();logA(s,'Entrega concluída');save();render();toast('Entrega concluída')}
 function fCanc(id){const s=S.sales.find(x=>x.id===id);
@@ -1245,41 +1265,40 @@ function doApagaPag(pid){const x=S.cpag.find(o=>o.id===pid);if(!x)return;const s
  S.cpag=S.cpag.filter(o=>o.id!==pid);refazCarne(s);logA(s,`Pagamento apagado: ${R(x.v)} de ${br(x.d)}`);save();render();toast('Pagamento apagado');fReceber(s.id,1)}
 //#CARNE-END
 const atrasoTxt=old=>{const d=Math.floor((new Date(hoje())-new Date(old))/864e5),m=Math.floor(d/30);return m>=1?`${m} ${m>1?'meses':'mês'} (${d} dias)`:`${d} dia${d>1?'s':''}`};
+// carnê = saldo que vai baixando; parcela combinada é só referência (sem atraso por parcela)
+const SEMPAG=30;
+function carInfo(s){const c=C(s.cli),ps=(s.parcs||[]).filter(p=>!p.canc),falta=r2(ps.reduce((a,p)=>a+prem(p),0)),pago=r2(ps.reduce((a,p)=>a+paidOf(p),0)),tot=r2(falta+pago);
+ const op=openPs(s),pv=c.pv>0?+c.pv:(op[0]?op[0].v:0);
+ const ult=[...S.cpag.filter(x=>x.vid===s.id).map(x=>x.d),...ps.filter(p=>p.pago&&!p.vp).map(p=>p.pago)].sort().pop()||'';
+ const ref=ult||s.d,dias=Math.max(0,Math.round((new Date(hoje()+'T12:00')-new Date(ref+'T12:00'))/864e5));
+ const n=pv>0?Math.ceil(r2(falta/pv)-0.004):0,ultv=pv>0&&n>0?r2(falta-pv*(n-1)):0;
+ return{s,c,falta,pago,tot,pv,n,ultv,ult,dias,sem:falta>0.004&&dias>SEMPAG}}
+const faltamTxt=x=>x.n<=0?'—':x.n===1?'1 parcela'+(Math.abs(x.ultv-x.pv)>0.004?` de ${R(x.ultv)}`:''):`${x.n} parcelas`+(Math.abs(x.ultv-x.pv)>0.004?`<div class="mut">a última de ${R(x.ultv)}</div>`:'');
 V.carne=()=>{
- const hj=hoje(),rows=[],sales=S.sales.filter(s=>s.parcs&&s.parcs.length&&inL(s)&&visS(s));
- sales.forEach(s=>s.parcs.forEach(p=>{if(!p.canc)rows.push({s,p,st:pstat(p,hj)})}));
- const rem=a=>a.reduce((x,r)=>x+prem(r.p),0);
- const at=rows.filter(r=>r.st==='atrasada'),ab=rows.filter(r=>r.st!=='paga'),ad=rows.filter(r=>r.st==='adiada'),
-  pg=S.cpag.filter(x=>x.d.slice(0,7)===mes&&sales.some(s=>s.id===x.vid)),
-  sem=rows.filter(r=>r.st==='aberta'&&r.p.venc<=iso(new Date(Date.now()+7*864e5)));
- const dev=sales.map(s=>{const ps=s.parcs.filter(p=>!p.canc),falta=r2(ps.reduce((a,p)=>a+prem(p),0));if(falta<=0.004)return null;
-  const atr=ps.filter(p=>pstat(p,hj)==='atrasada'),atv=r2(atr.reduce((a,p)=>a+prem(p),0)),old=atr.reduce((m,p)=>!m||p.venc<m?p.venc:m,''),
-  adi=ps.filter(p=>pstat(p,hj)==='adiada'),
-  ult=[...S.cpag.filter(x=>x.vid===s.id).map(x=>x.d),...ps.filter(p=>p.pago&&!p.vp).map(p=>p.pago)].sort().pop()||'';
-  return{s,falta,atv,old,adi,ult,prox:openPs(s)[0],pagoT:ps.reduce((a,p)=>a+paidOf(p),0),tot:ps.reduce((a,p)=>a+p.v,0)}}).filter(Boolean).sort((a,b)=>b.atv-a.atv||a.old.localeCompare(b.old));
- const F={devedores:['Por cliente',dev],atrasadas:['Atrasadas',at],aberto:['Em aberto',rows.filter(r=>r.st==='aberta')],adiadas:['Adiadas',ad],pagas:['Pagas no mês',rows.filter(r=>r.st==='paga'&&r.p.pago&&r.p.pago.slice(0,7)===mes)],todas:['Todas',rows]};
+ const sales=S.sales.filter(s=>s.parcs&&s.parcs.length&&inL(s)&&visS(s)),all=sales.map(carInfo);
+ const dev=all.filter(x=>x.falta>0.004).sort((a,b)=>b.dias-a.dias||b.falta-a.falta),sem=dev.filter(x=>x.sem),quit=all.filter(x=>x.falta<=0.004);
+ const pg=S.cpag.filter(x=>x.d.slice(0,7)===mes&&sales.some(s=>s.id===x.vid)).sort((a,b)=>b.d.localeCompare(a.d));
+ const F={devedores:['Com saldo',dev],sem:['Sem pagar há '+SEMPAG+'+ dias',sem],pagos:['Pagamentos do mês',pg],quitados:['Quitados',quit]};
  const tile=(l,v,d,k,acc)=>`<div class="tile ${acc?'acc':''}"><div class="th"><span>${l}</span><i>${ic(k,'width:16px;height:16px')}</i></div><div><div class="tv">${v}</div><div class="td">${d}</div></div></div>`;
- const stTxt=(p,st)=>{const extra=p.vp>0&&prem(p)>0?` · pagou ${R(p.vp)}`:'';
-  if(st==='paga')return `<span class="st ok">Paga em ${brs(p.pago)} · ${PAGS[p.fp]||p.fp||''}</span>`;
-  if(st==='adiada')return `<span class="st wa">Adiada até ${br(p.adi)}${extra}</span>`;
-  if(st==='atrasada'){const dl=Math.round((new Date(hj)-new Date(p.venc))/864e5);return `<span class="st bad">${dl} dia${dl>1?'s':''} de atraso${extra}</span>`}
-  return `<span class="st wa">Em aberto${extra}</span>`};
  const cur=carF in F?carF:'devedores';
+ const ped=s=>`#${String(s.n).padStart(5,'0')} · ${s.loja}`;
  let tbl;
- if(cur==='devedores'){
-  tbl=`<tr><th>Cliente</th><th>Pedido</th><th class="r">Parcela</th><th class="r">Já pagou</th><th class="r">Falta</th><th>Situação</th><th>Último pagamento</th><th class="r"></th></tr>`+
-  (dev.map(({s,falta,atv,old,adi,ult,prox,pagoT,tot})=>{const c=C(s.cli),pr={...prox,v:prem(prox)};
-   const sit=atv>0?`<span class="st bad">${R(atv)} em atraso</span><div class="mut">há ${atrasoTxt(old)}</div>`:adi.length?`<span class="st wa">Adiado</span>`:`<span class="st ok">Em dia</span>`;
-   return `<tr><td><b>${H(c.n)}</b><div class="mut">${H(c.tel)}</div></td><td class="mut">#${String(s.n).padStart(5,'0')} · ${s.loja}</td><td class="r">${R(c.pv>0?c.pv:prox.v)}<div class="mut">${c.pv>0?'combinada':'por mês'}</div></td><td class="r">${R(pagoT)}<div class="mut">de ${R(tot)}</div></td><td class="r"><b>${R(falta)}</b></td><td>${sit}</td><td>${ult?br(ult):'—'}</td>
-   <td class="r" style="white-space:nowrap">${waBtn(c.tel,msgParc(s,pr),'Cobrar')} <button class="btn dark sm" onclick="fReceber('${s.id}')">Receber</button> <button class="btn light sm" onclick="fReparc('${s.id}')">Parcela</button> ${atv>0?`<button class="btn light sm" onclick="fAdiar('${s.id}')">Adiar</button>`:adi.length?`<button class="btn light sm" onclick="tirarAdi('${s.id}')">Tirar adiamento</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty">Nenhum carnê com valor em aberto</td></tr>');
+ if(cur==='pagos'){
+  tbl=`<tr><th>Data</th><th>Cliente</th><th>Pedido</th><th class="r">Valor</th><th>Forma</th><th>Lançado por</th><th class="r"></th></tr>`+
+  (pg.map(x=>{const s=S.sales.find(o=>o.id===x.vid),c=C(s.cli);return `<tr><td>${br(x.d)}</td><td><b>${H(c.n)}</b></td><td class="mut">${ped(s)}</td><td class="r"><b>${R(x.v)}</b></td><td>${H(PAGS[x.fp]||x.fp||'')}</td><td class="mut">${H(x.u||'')}</td><td class="r"><button class="btn light sm" onclick="fEditPag('${x.id}')">Corrigir</button></td></tr>`}).join('')||'<tr><td colspan="7" class="empty">Nenhum pagamento neste mês</td></tr>');
+ }else if(cur==='quitados'){
+  tbl=`<tr><th>Cliente</th><th>Pedido</th><th class="r">Total do carnê</th><th>Último pagamento</th><th class="r"></th></tr>`+
+  (quit.map(x=>`<tr><td><b>${H(x.c.n)}</b><div class="mut">${H(x.c.tel)}</div></td><td class="mut">${ped(x.s)}</td><td class="r">${R(x.tot)}</td><td>${x.ult?br(x.ult):'—'}</td><td class="r">${S.cpag.some(o=>o.vid===x.s.id)?`<button class="btn light sm" onclick="fReceber('${x.s.id}',1)">Ver pagamentos</button>`:''}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">Nenhum carnê quitado</td></tr>');
  }else{
-  const list=[...F[cur][1]].sort((a,b)=>cur==='pagas'?b.p.pago.localeCompare(a.p.pago):a.p.venc.localeCompare(b.p.venc));
-  tbl=`<tr><th>Cliente</th><th>Pedido</th><th>Parcela</th><th>Vencimento</th><th class="r">Valor</th><th>Status</th><th class="r"></th></tr>`+
-  (list.map(({s,p,st})=>{const c=C(s.cli);return `<tr><td><b>${H(c.n)}</b><div class="mut">${H(c.tel)}</div></td><td class="mut">#${String(s.n).padStart(5,'0')} · ${s.loja}</td><td>${p.k}/${s.parcs.length}</td><td>${br(p.venc)}</td><td class="r"><b>${R(p.v)}</b>${p.vp>0&&prem(p)>0?`<div class="mut">falta ${R(prem(p))}</div>`:''}</td><td>${stTxt(p,st)}</td>
-   <td class="r" style="white-space:nowrap">${st==='paga'?'':`${waBtn(c.tel,msgParc(s,{...p,v:prem(p)}),'Cobrar')} <button class="btn dark sm" onclick="fReceber('${s.id}')">Receber</button>`}</td></tr>`}).join('')||'<tr><td colspan="7" class="empty">Nada por aqui</td></tr>');
+  tbl=`<tr><th>Cliente</th><th>Pedido</th><th class="r">Parcela</th><th class="r">Falta pagar</th><th>Faltam</th><th>Último pagamento</th><th>Situação</th><th class="r"></th></tr>`+
+  (F[cur][1].map(x=>{const{s,c}=x,cob=Math.min(x.pv||x.falta,x.falta);
+   const sit=x.sem?`<span class="st bad">Sem pagar há ${x.dias} dias</span>`:`<span class="st ok">Em dia</span>`;
+   return `<tr><td><b>${H(c.n)}</b><div class="mut">${H(c.tel)}</div></td><td class="mut">${ped(s)}</td><td class="r">${x.pv>0?R(x.pv):'—'}<div class="mut">${c.pv>0?'combinada':'por mês'}</div></td><td class="r"><b>${R(x.falta)}</b><div class="mut">pagou ${R(x.pago)} de ${R(x.tot)}</div></td><td>${faltamTxt(x)}</td><td>${x.ult?br(x.ult):'<span class="mut">nenhum ainda</span>'}</td><td>${sit}</td>
+   <td class="r" style="white-space:nowrap">${waBtn(c.tel,msgParc(s,{v:cob}),'Cobrar')} <button class="btn dark sm" onclick="fReceber('${s.id}')">Receber</button> <button class="btn light sm" onclick="fReparc('${s.id}')">Parcela</button></td></tr>`}).join('')||`<tr><td colspan="8" class="empty">${cur==='sem'?'Ninguém está há mais de '+SEMPAG+' dias sem pagar':'Nenhum carnê com valor em aberto'}</td></tr>`);
  }
- return head('Carnê','Pagamento livre: o cliente paga o que puder e o sistema abate das parcelas mais antigas')+`
- <div class="k6">${tile('Atrasado',R(rem(at)),`${new Set(at.map(r=>r.s.cli)).size} clientes · ${at.length} parcelas`,'clock',true)}${tile('A receber',R(rem(ab)),ab.length+' parcelas em aberto','carne')}${tile('Recebido em '+MES[+mes.slice(5)-1],R(pg.reduce((a,x)=>a+x.v,0)),pg.length+' pagamentos','check')}${tile('Vence nos próximos dias',R(rem(sem)),sem.length+' parcelas','pedidos')}</div>
+ const sum=a=>a.reduce((t,x)=>t+x.falta,0);
+ return head('Carnê','O cliente paga o que puder e o valor baixa do saldo. A parcela combinada é só referência.')+`
+ <div class="k6">${tile('Falta receber',R(sum(dev)),dev.length+' carnês com saldo','carne',true)}${tile('Recebido em '+MES[+mes.slice(5)-1],R(pg.reduce((a,x)=>a+x.v,0)),pg.length+' pagamentos','check')}${tile('Sem pagar há '+SEMPAG+'+ dias',sem.length+' cliente'+(sem.length===1?'':'s'),R(sum(sem))+' de saldo','clock')}</div>
  <div class="card mt"><div class="ct"><div class="ftabs">${Object.entries(F).map(([k,[l,a]])=>`<button class="${cur===k?'on':''}" style="${cur===k?'':'background:var(--soft)'}" onclick="carF='${k}';render()">${l}<span>${a.length}</span></button>`).join('')}</div><div class="search">${ic('search')}<input placeholder="Buscar cliente" oninput="filtRows(this.value,'cart_')"></div></div>
  <div class="tw"><table id="cart_">${tbl}</table></div></div>`;
 };
@@ -2097,7 +2116,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611231010';
+const APP_VER='202611231030';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
