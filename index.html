@@ -951,7 +951,7 @@ function spSet(w,k,key,val){if(w==='e')edRead();const o=spObj(w),a=o.pags;a[k][k
  spDraw(w)}
 function spOk(a,tot){a=(a||[]).filter(p=>+p.v>0);if(a.length<2)return 'No pagamento dividido, coloca o valor de pelo menos duas formas';if(Math.abs(spTot(a)-tot)>=0.01)return 'A soma das formas ('+R(spTot(a))+') tem que dar o total do pedido ('+R(tot)+')';return ''}
 const spClean=a=>(a||[]).filter(p=>+p.v>0).map(p=>({f:p.f,v:r2(+p.v),parc:p.f==='Cartão de crédito'?(p.parc||1):1}));
-function newCart(){const l=loja==='Todas'?lojasOk()[0]:loja;cart={items:[],cli:'',nc:{n:'',tel:''},loja:l,vend:defVend(l),desc:0,pag:'Pix',parc:1,pv:0,entr:0,entrPag:'Dinheiro',venc1:addM(hoje(),1),fromOrc:null,ent:false,cid:CIDADES[0],end:'',dEnt:iso(new Date(Date.now()+2*864e5)),obs:''}}
+function newCart(){const l=loja==='Todas'?lojasOk()[0]:loja;cart={items:[],cli:'',nc:{n:'',tel:''},loja:l,vend:defVend(l),desc:0,pag:'Pix',parc:1,pv:0,entr:0,entrPag:'Dinheiro',venc1:addM(hoje(),1),fromOrc:null,ent:false,cid:CIDADES[0],end:'',ea:null,dEnt:iso(new Date(Date.now()+2*864e5)),obs:''}}
 function defVend(l){const vs=S.vend.filter(v=>v.loja===l&&(!ownV()||v.id===CU.vend));return vs[0]?vs[0].id:''}
 V.pdv=()=>{if(!cart)newCart();
  const cnt=c=>c==='Todos'?S.prod.length:S.prod.filter(p=>p.cat===c).length;
@@ -976,7 +976,7 @@ function drawCart(){
  const sub=cSub(),tot=Math.max(0,sub-(+cart.desc||0)),n=Math.max(0,...S.sales.map(s=>s.n))+1;
  const vs=S.vend.filter(v=>v.loja===cart.loja&&(!ownV()||v.id===CU.vend));
  $('cart').innerHTML=`<div class="chd"><b>Pedido Nº ${String(n).padStart(5,'0')}</b><div><button class="x" title="Limpar pedido" onclick="newCart();render()">${ic('trash','width:16px;height:16px')}</button><button class="x mobonly" onclick="$('cart').classList.remove('open')">${ic('x','width:16px;height:16px')}</button></div></div>
- <label>Cliente</label><select onchange="cart.cli=this.value;const c=S.cli.find(x=>x.id===this.value);if(c){cart.end=c.end||'';if(c.cid)cart.cid=c.cid}drawCart()"><option value="">Escolha o cliente…</option><option value="__new" ${cart.cli==='__new'?'selected':''}>+ Cliente novo</option>${S.cli.filter(cliOk).map(c=>`<option value="${c.id}" ${cart.cli===c.id?'selected':''}>${H(c.n)}</option>`).join('')}</select>
+ <label>Cliente</label><select onchange="cart.cli=this.value;const c=S.cli.find(x=>x.id===this.value);if(c){cart.end=c.end||'';cart.ea=endParts(cart.end);if(c.cid)cart.cid=c.cid}drawCart()"><option value="">Escolha o cliente…</option><option value="__new" ${cart.cli==='__new'?'selected':''}>+ Cliente novo</option>${S.cli.filter(cliOk).map(c=>`<option value="${c.id}" ${cart.cli===c.id?'selected':''}>${H(c.n)}</option>`).join('')}</select>
  ${cart.cli==='__new'?`<div class="two" style="margin-top:8px"><input placeholder="Nome" value="${H(cart.nc.n)}" onchange="cart.nc.n=this.value"><input placeholder="Telefone" value="${H(cart.nc.tel)}" onchange="cart.nc.tel=this.value"></div>`:''}
  <div class="two"><div><label>Loja</label>${lojasOk().length>1?`<select onchange="cart.loja=this.value;cart.vend=defVend(this.value);drawCart()">${lojasOk().map(l=>`<option ${cart.loja===l?'selected':''}>${l}</option>`).join('')}</select>`:`<div class="ro">${cart.loja}</div>`}</div>
  <div><label>Vendedor</label>${vs.length>1?`<select onchange="cart.vend=this.value">${vs.map(v=>`<option value="${v.id}" ${cart.vend===v.id?'selected':''}>${H(v.n)}</option>`).join('')}</select>`:`<div class="ro">${vs[0]?H(vs[0].n):'—'}</div>`}</div></div>
@@ -993,7 +993,8 @@ function drawCart(){
  ${cart.pag==='Dividido'?spUI('c',tot):''}
  ${cart.pag!=='Carnê'&&fee({v:tot,pag:cart.pag,parc:cart.parc,pags:cart.pags})>0?`<div class="mut" style="margin-top:6px">Taxa da maquininha: ${R(fee({v:tot,pag:cart.pag,parc:cart.parc,pags:cart.pags}))}</div>`:''}
  <div class="sw" onclick="cart.ent=!cart.ent;drawCart()"><span>Entregar na casa do cliente</span><span class="tog ${cart.ent?'on':''}"></span></div>
- ${cart.ent?`<div class="two"><div><label>Cidade</label><select onchange="cart.cid=this.value">${CIDADES.map(c=>`<option ${cart.cid===c?'selected':''}>${c}</option>`).join('')}</select></div><div><label>Data</label><input type="date" value="${cart.dEnt}" onchange="cart.dEnt=this.value"></div></div><label>Endereço</label><input placeholder="Rua, número, bairro" value="${H(cart.end)}" onchange="cart.end=this.value">`:''}
+ ${cart.ent?`<div class="two"><div><label>Cidade</label><select onchange="cart.cid=this.value">${CIDADES.map(c=>`<option ${cart.cid===c?'selected':''}>${c}</option>`).join('')}</select></div><div><label>Data</label><input type="date" value="${cart.dEnt}" onchange="cart.dEnt=this.value"></div></div>${(()=>{const e=cart.ea||(cart.ea=endParts(cart.end));const f=(k,l,ph,st='')=>`<div${st}><label>${l}</label><input placeholder="${ph}" value="${H(e[k])}" onchange="setEa('${k}',this.value)"></div>`;
+ return `<div class="two" style="grid-template-columns:1fr 96px">${f('r','Rua','Ex.: Rua das Flores')}${f('nu','Número','123')}</div><div class="two">${f('b','Bairro','Ex.: Centro')}${f('co','Complemento','Casa 2, apto 31')}</div>${f('ref','Ponto de referência','Ex.: em frente à padaria')}`})()}`:''}
  <label>Observações (sai na via)</label><input placeholder="Ex.: cor branca, montagem inclusa" value="${H(cart.obs)}" onchange="cart.obs=this.value">
  <button class="btn acc block fin" onclick="finalizar()">Finalizar venda · <span id="ctot2">${R(tot)}</span></button>
  <button class="btn light block" style="margin-top:8px" onclick="salvarOrc()">${ic('pedidos','width:16px;height:16px')}Salvar como orçamento</button>
@@ -1003,6 +1004,13 @@ function drawCart(){
 }
 function updTot(){const t=R(Math.max(0,cSub()-(+cart.desc||0)));$('ctot').textContent=t;$('ctot2').textContent=t;const f=$('cfab');if(f)f.lastChild.textContent=t+' →'}
 function cq(k,d){cart.items[k].q+=d;if(cart.items[k].q<1)cart.items.splice(k,1);drawProds();drawCart()}
+// endereço em campos separados (grava tudo junto no mesmo campo do banco)
+function endParts(t){const o={r:'',nu:'',b:'',co:'',ref:''};t=(t||'').trim();if(!t)return o;
+ const ps=t.split(' - ');const rf=ps.findIndex(x=>/^Ref\.?:/i.test(x));if(rf>=0)o.ref=ps.splice(rf,1)[0].replace(/^Ref\.?:\s*/i,'');
+ const m=ps[0].match(/^(.*),\s*([^,]+)$/);if(m&&/\d|s\/?n/i.test(m[2])){o.r=m[1];o.nu=m[2]}else o.r=ps[0];
+ o.b=ps[1]||'';o.co=ps.slice(2).join(' - ');return o}
+function endJoin(o){const t=x=>(x||'').trim();return [t(o.r)+(t(o.nu)?', '+t(o.nu):''),t(o.b),t(o.co),t(o.ref)?'Ref.: '+t(o.ref):''].filter(Boolean).join(' - ')}
+function setEa(k,v){cart.ea=cart.ea||endParts(cart.end);cart.ea[k]=v;cart.end=endJoin(cart.ea)}
 function cliFromCart(){let cli=cart.cli;if(!cli){toast('Escolhe o cliente');return null}
  if(cli==='__new'){if(!cart.nc.n.trim()){toast('Coloca o nome do cliente novo');return null}cli=uid();S.cli.push({id:cli,loja:cart.loja,vend:cart.vend,n:cart.nc.n.trim(),tel:cart.nc.tel,cid:cart.ent?cart.cid:'',end:cart.ent?cart.end:''})}
  return cli}
@@ -1031,7 +1039,7 @@ function salvarOrc(){
  S.orc.push(o);save().then(()=>{newCart();render();verVia(o.id,'orc')});
 }
 function orcVenda(id){const o=S.orc.find(x=>x.id===id);newCart();Object.assign(cart,{items:o.items.map(i=>({...i,u:P(i.prod).p||i.u})),cli:o.cli,desc:o.desc,pag:o.pag,parc:o.parc,obs:o.obs,fromOrc:o.id,entr:o.entr||0,pags:o.pags?o.pags.map(p=>({...p})):undefined});
- if(lojasOk().includes(o.loja)){cart.loja=o.loja;cart.vend=defVend(o.loja)}if(o.ent){cart.ent=true;cart.cid=o.ent.cid;cart.end=o.ent.end||''}close_();go('pdv');toast('Orçamento carregado. Confere e finaliza.')}
+ if(lojasOk().includes(o.loja)){cart.loja=o.loja;cart.vend=defVend(o.loja)}if(o.ent){cart.ent=true;cart.cid=o.ent.cid;cart.end=o.ent.end||'';cart.ea=null}close_();go('pdv');toast('Orçamento carregado. Confere e finaliza.')}
 
 // ---------- pedidos ----------
 V.pedidos=()=>{
@@ -1193,7 +1201,7 @@ function rota(dt){
  const ds_=[...new Set(ag.map(s=>s.ent.d))].sort();if(!ds_.length)return toast('Nenhuma entrega agendada');
  dt=dt||ds_.find(d=>d>=hoje())||ds_[0];
  const l=ag.filter(s=>s.ent.d===dt).sort((a,b)=>a.ent.cid.localeCompare(b.ent.cid));
- const adr=s=>`${s.ent.end?s.ent.end+', ':''}${s.ent.cid}, SP`;
+ const adr=s=>{const e=(s.ent.end||'').split(' - ').filter(x=>!/^Ref\.?:/i.test(x)).join(' - ');return `${e?e+', ':''}${s.ent.cid}, SP`};
  const orig=(lojasOk().length===1&&lojasOk()[0]==='Loja 2'?S.store.l2:S.store.l1);
  const maps=l.length?'https://www.google.com/maps/dir/?api=1&travelmode=driving&origin='+encodeURIComponent(orig)+'&destination='+encodeURIComponent(adr(l[l.length-1]))+(l.length>1?'&waypoints='+encodeURIComponent(l.slice(0,-1).map(adr).join('|')):''):'#';
  const txt=`*Entregas de ${br(dt)}*\n\n`+l.map((s,k)=>`${k+1}. ${C(s.cli).n} · ${C(s.cli).tel}\n${adr(s)}\n${dsc(s)}${s.obs?'\nObs: '+s.obs:''}`).join('\n\n');
@@ -2089,7 +2097,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611231000';
+const APP_VER='202611231005';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
