@@ -1287,14 +1287,14 @@ function prevRec(id){const s=S.sales.find(x=>x.id===id),v=r2(+$('rcv').value);le
  for(const p of openPs(s)){if(rest<=0.004)break;const x=Math.min(rest,prem(p));rest=r2(rest-x);out.push(`${p.k}ª parcela: ${R(x)} ${x>=prem(p)-0.004?'(quita)':`(ainda faltam ${R(prem(p)-x)})`}`)}
  $('rcp').innerHTML=v>0?out.join('<br>')+(rest>0.004?`<br><b style="color:var(--bad)">Passa ${R(rest)} do que falta no carnê</b>`:''):''}
 function fReceber(id,force){const s=S.sales.find(x=>x.id===id),c=C(s.cli),ps=openPs(s);
- if(!ps.length&&!(force&&isAdm()&&S.cpag.some(x=>x.vid===id))){close_();return toast('Esse carnê já está todo pago')}
+ if(!ps.length&&!(force&&S.cpag.some(x=>x.vid===id))){close_();return toast('Esse carnê já está todo pago')}
  const falta=r2(ps.reduce((a,p)=>a+prem(p),0)),sug=ps.length?Math.min(falta,c.pv>0?c.pv:prem(ps[0])):0,hist=S.cpag.filter(x=>x.vid===id).sort((a,b)=>b.d.localeCompare(a.d));
  modal(`<h2>Receber do carnê</h2><p class="mut" style="margin-bottom:14px">${H(c.n)} · pedido #${String(s.n).padStart(5,'0')} · falta ${R(falta)} em ${ps.length} parcela${ps.length>1?'s':''}</p>
  <div class="f"><label>Valor recebido (R$)<input id="rcv" type="number" step="0.01" value="${sug}" oninput="prevRec('${id}')"></label><label>Data do pagamento<input id="rcd" type="date" value="${hoje()}"></label>
  <label>Forma de pagamento<select id="rcf">${['Dinheiro','Pix','Cartão de débito','Cartão de crédito'].map(x=>`<option>${x}</option>`).join('')}</select></label>
  <label>Parcela combinada deste cliente (R$)<input id="rcpv" type="number" step="0.01" value="${c.pv||''}" placeholder="Ex.: 200"></label>
  <div class="w mut" id="rcp"></div></div>
- ${hist.length?`<div class="sec">Pagamentos já feitos</div><div class="mut" style="line-height:1.7">${hist.map(x=>`<div style="display:flex;align-items:center;gap:8px;justify-content:space-between"><span>${br(x.d)} · <b>${R(x.v)}</b> · ${H(PAGS[x.fp]||x.fp||'')} · ${H(x.u||'')}</span>${isAdm()?`<button class="btn light sm" onclick="fEditPag('${x.id}')">Corrigir</button>`:''}</div>`).join('')}</div>`:''}
+ ${hist.length?`<div class="sec">Pagamentos já feitos</div><div class="mut" style="line-height:1.7">${hist.map(x=>`<div style="display:flex;align-items:center;gap:8px;justify-content:space-between"><span>${br(x.d)} · <b>${R(x.v)}</b> · ${H(PAGS[x.fp]||x.fp||'')} · ${H(x.u||'')}</span><button class="btn light sm" onclick="fEditPag('${x.id}')">Corrigir</button></div>`).join('')}</div>`:''}
  <div class="acts"><button class="btn light" onclick="close_()">Cancelar</button>${ps.length?`<button class="btn dark" onclick="doReceber('${id}')">Confirmar recebimento</button>`:''}</div>`);prevRec(id)}
 function fReparc(id){const s=S.sales.find(x=>x.id===id),c=C(s.cli),ps=openPs(s);if(!ps.length)return toast('Esse carnê já está todo pago');
  const falta=r2(ps.reduce((a,p)=>a+prem(p),0));
@@ -2097,7 +2097,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611231005';
+const APP_VER='202611231010';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
