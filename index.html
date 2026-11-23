@@ -84,6 +84,24 @@ nav.top button.on{background:var(--ink);color:var(--onInk)}
 .cxrow{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);font-size:13.5px}.cxrow:last-child{border:0}
 .cxrow.tt{font-weight:700;font-size:15px}.cxrow input{width:140px;text-align:right}
 .diff{border-radius:14px;padding:12px 14px;margin-top:12px;font-weight:600;font-size:14px;display:flex;justify-content:space-between}
+/* editar pedido */
+.edh{margin-bottom:14px}.edh h2{margin-bottom:4px}.edh p{font-size:13px;color:var(--ink2)}
+.edx{display:grid;gap:12px}
+.eds{background:var(--card);border-radius:16px;padding:16px}
+.eds>h3{font-size:14px;font-weight:700;letter-spacing:-.2px;margin:0 0 12px}
+.eds .f{gap:10px 12px}
+.eit{display:grid;grid-template-columns:minmax(0,1fr) 72px 112px 100px 28px;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.eit.hd{border:0;padding:0 0 4px;font-size:11.5px;font-weight:600;color:var(--mut)}
+.eit .sub{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.eit.hd .r{text-align:right}
+.eadd{margin-top:10px}
+.esum{margin-top:14px;border-top:1px solid var(--line);padding-top:10px;font-size:13.5px}
+.esum div{display:flex;justify-content:space-between;padding:4px 0;color:var(--ink2)}.esum b{color:var(--ink);font-variant-numeric:tabular-nums}
+.esum .tt{font-size:16px;font-weight:700;color:var(--ink);padding-top:8px}.esum .tt b{font-size:18px}
+.esum .fl{color:var(--ink);font-weight:600}
+.enote{font-size:12.5px;color:var(--ink2);background:var(--soft);border-radius:10px;padding:8px 10px;margin-top:10px}
+.edfoot{position:sticky;bottom:-24px;background:var(--shell);margin:0 -24px -24px;padding:12px 24px 20px;display:flex;justify-content:flex-end;gap:8px;z-index:2}
+@media(max-width:640px){.eit{grid-template-columns:64px minmax(0,1fr) auto 28px}.eit .eprod{grid-column:1/-1}.eit.hd{display:none}}
 .diff.ok{background:var(--okS);color:var(--ok)}.diff.bad{background:var(--badS);color:var(--bad)}
 .rt{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}.rt:last-child{border:0}
 .rt .num{width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--onInk);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
@@ -1108,11 +1126,17 @@ function edRead(){if(!EP||!$('edcli'))return;
  EP.desc=+$('eddesc').value||0;EP.pag=$('edpag').value;
  if($('edparc'))EP.parc=+$('edparc').value||1;
  if($('edentr')){EP.entr=+$('edentr').value||0;EP.entrPag=$('edentrpag').value;EP.v1=$('edv1').value||EP.v1}
- EP.et=$('edet').value;if($('edec'))EP.ec=$('edec').value;if($('edee'))EP.ee=$('edee').value;if($('eded'))EP.ed=$('eded').value;if($('edes'))EP.es=$('edes').value}
+ EP.et=$('edet').value;if($('edec'))EP.ec=$('edec').value;if($('edr'))EP.ee=endJoin({r:$('edr').value,nu:$('ednu').value,b:$('edba').value,co:$('edco').value,ref:$('edrf').value});if($('eded'))EP.ed=$('eded').value;if($('edes'))EP.es=$('edes').value}
 function edTot(){return r2(EP.items.reduce((a,i)=>a+(+i.q||0)*(+i.u||0),0)-(+EP.desc||0))}
-function edSum(){if(!$('edsum'))return;const t=edTot();let h=`<div class="diff ok"><span>Total do pedido</span><span>${R(t)}</span></div>`;
- if(EP.pag==='Carnê'){const r=r2(t-(+EP.entr||0));h+=`<div class="mut" style="margin-top:6px">Entra agora (entrada): <b style="color:var(--ink)">${R(+EP.entr||0)}</b> · Restante no carnê: <b style="color:var(--ink)">${R(r)}</b></div>`}
- $('edsum').innerHTML=h}
+function edSum(){if(!$('edsum'))return;const t=edTot(),s=S.sales.find(x=>x.id===EP.id);
+ EP.items.forEach((i,k)=>{const e=$('edsub'+k);if(e)e.textContent=R((+i.q||0)*(+i.u||0))});
+ const sub=r2(EP.items.reduce((a,i)=>a+(+i.q||0)*(+i.u||0),0));let h=`<div class="esum">`;
+ if(+EP.desc>0)h+=`<div><span>Produtos</span><b>${R(sub)}</b></div><div><span>Desconto</span><b>- ${R(+EP.desc)}</b></div>`;
+ h+=`<div class="tt"><span>Total do pedido</span><b>${R(t)}</b></div>`;
+ if(EP.pag==='Carnê'){const en=+EP.entr||0,r=r2(t-en),pg=s&&s.pag==='Carnê'?r2((s.parcs||[]).filter(p=>!p.canc).reduce((a,p)=>a+paidOf(p),0)):0;
+  h+=`<div><span>Entrada</span><b>${R(en)}</b></div><div><span>No carnê</span><b>${R(r)}</b></div>`;
+  if(pg>0.004)h+=`<div><span>Já pago do carnê</span><b>${R(pg)}</b></div><div class="fl"><span>Falta pagar</span><b>${R(Math.max(0,r2(r-pg)))}</b></div>`}
+ $('edsum').innerHTML=h+`</div>`}
 function fEdit(id){const s=S.sales.find(x=>x.id===id);if(!s)return;
  const pc=s.parcs&&s.parcs[0];
  EP={id,items:s.items.map(i=>({...i})),cli:s.cli,loja:s.loja,vend:s.vend,d:s.d,obs:s.obs||'',desc:+s.desc||0,pag:s.pag,parc:s.pag==='Carnê'?(s.parcs&&s.parcs.length||s.parc||1):(s.parc||1),entr:+s.entr||0,entrPag:s.entrPag||'Dinheiro',v1:pc?pc.venc:addM(s.d,1),pags:s.pags?s.pags.map(p=>({...p})):null,
@@ -1120,45 +1144,57 @@ function fEdit(id){const s=S.sales.find(x=>x.id===id);if(!s)return;
  drawEdit()}
 function drawEdit(){edRead();const s=S.sales.find(x=>x.id===EP.id);
  const cl=[...S.cli].sort((a,b)=>(a.n||'').localeCompare(b.n||'')),pr=[...S.prod].sort((a,b)=>(a.n||'').localeCompare(b.n||''));
- const ncar=EP.pag==='Carnê',ncre=EP.pag==='Cartão de crédito';
- modal(`<h2>Editar pedido #${String(s.n).padStart(5,'0')}</h2><p class="mut" style="margin-bottom:12px">Dá pra mudar tudo: cliente, produtos, valores, forma de pagamento, carnê e entrega. O estoque se ajusta sozinho.</p>
- <div class="f">
+ const ncar=EP.pag==='Carnê',ncre=EP.pag==='Cartão de crédito',ea=endParts(EP.ee);
+ const temPago=(s.parcs||[]).some(p=>p.pago||p.vp);
+ modal(`<div class="edh"><h2>Editar pedido #${String(s.n).padStart(5,'0')}</h2><p>${H(C(EP.cli).n)} · ${br(EP.d)} · ${H(EP.loja)}. O estoque se ajusta sozinho ao salvar.</p></div>
+ <div class="edx">
+ <section class="eds"><h3>Cliente e venda</h3><div class="f">
   <label>Cliente<select id="edcli">${opt(cl.map(c=>[c.id,c.n]),EP.cli)}</select></label>
   <label>Data da venda<input id="edd" type="date" value="${EP.d}"></label>
   <label>Loja<select id="edloja">${opt(LOJAS,EP.loja)}</select></label>
   <label>Vendedor<select id="edvend">${opt(S.vend.map(v=>[v.id,v.n+' · '+v.loja]),EP.vend)}</select></label>
- </div>
- <h3 style="margin:16px 0 8px;font-size:14px">Produtos</h3>
- ${EP.items.map((i,k)=>`<div class="f" style="grid-template-columns:2fr 70px 110px 34px;align-items:end;margin-bottom:6px">
-  <label>${k?'':'Produto'}<select onchange="edRead();EP.items[${k}].prod=this.value;EP.items[${k}].u=P(this.value).p;drawEdit()">${opt(pr.map(p=>[p.id,p.n+' ('+p.q+' em estoque)']),i.prod)}${P(i.prod).n==='Produto removido'?`<option value="${i.prod}" selected>Produto removido</option>`:''}</select></label>
-  <label>${k?'':'Qtd'}<input type="number" min="1" value="${i.q}" oninput="EP.items[${k}].q=+this.value||0;edRead();edSum()"></label>
-  <label>${k?'':'Preço un.'}<input type="number" step="0.01" value="${i.u}" oninput="EP.items[${k}].u=+this.value||0;edRead();edSum()"></label>
-  <button class="x" title="Tirar produto" onclick="edRead();EP.items.splice(${k},1);drawEdit()">${ic('trash','width:16px;height:16px')}</button></div>`).join('')}
- <button class="btn line sm" onclick="edRead();const p=S.prod[0];if(p)EP.items.push({prod:p.id,q:1,u:p.p});drawEdit()">${ic('plus','width:14px;height:14px')}Adicionar produto</button>
- <h3 style="margin:16px 0 8px;font-size:14px">Pagamento</h3>
- <div class="f">
-  <label>Desconto (R$)<input id="eddesc" type="number" step="0.01" value="${EP.desc||''}" oninput="edRead();edSum()"></label>
+ </div></section>
+ <section class="eds"><h3>Produtos</h3>
+  <div class="eit hd"><span>Produto</span><span>Qtd</span><span>Preço un.</span><span class="r">Subtotal</span><span></span></div>
+  ${EP.items.map((i,k)=>`<div class="eit"><select class="eprod" aria-label="Produto" onchange="edRead();EP.items[${k}].prod=this.value;EP.items[${k}].u=P(this.value).p;drawEdit()">${opt(pr.map(p=>[p.id,p.n+' ('+p.q+' em estoque)']),i.prod)}${P(i.prod).n==='Produto removido'?`<option value="${i.prod}" selected>Produto removido</option>`:''}</select>
+   <input type="number" min="1" aria-label="Quantidade" value="${i.q}" oninput="EP.items[${k}].q=+this.value||0;edRead();edSum()">
+   <input type="number" step="0.01" aria-label="Preço unitário" value="${i.u}" oninput="EP.items[${k}].u=+this.value||0;edRead();edSum()">
+   <span class="sub" id="edsub${k}">${R((+i.q||0)*(+i.u||0))}</span>
+   <button class="x" title="Tirar produto" aria-label="Tirar produto" onclick="edRead();EP.items.splice(${k},1);drawEdit()">${ic('trash','width:16px;height:16px')}</button></div>`).join('')}
+  <button class="btn line sm eadd" onclick="edRead();const p=S.prod[0];if(p)EP.items.push({prod:p.id,q:1,u:p.p});drawEdit()">${ic('plus','width:14px;height:14px')}Adicionar produto</button>
+ </section>
+ <section class="eds"><h3>Pagamento</h3><div class="f">
   <label>Forma de pagamento<select id="edpag" onchange="drawEdit()">${opt(PAG,EP.pag)}</select></label>
+  <label>Desconto (R$)<input id="eddesc" type="number" step="0.01" placeholder="0,00" value="${EP.desc||''}" oninput="edRead();edSum()"></label>
   ${ncre?`<label>Parcelas no cartão<select id="edparc">${Array.from({length:12},(_,i)=>`<option value="${i+1}" ${EP.parc===i+1?'selected':''}>${i+1}x</option>`).join('')}</select></label>`:''}
-  ${ncar?`<label>Entrada (R$)<input id="edentr" type="number" step="0.01" value="${EP.entr||''}" oninput="edRead();edSum()"></label>
+  ${ncar?`<label>Entrada (R$)<input id="edentr" type="number" step="0.01" placeholder="0,00" value="${EP.entr||''}" oninput="edRead();edSum()"></label>
   <label>Entrada paga em<select id="edentrpag">${opt(['Dinheiro','Pix','Cartão de débito'],EP.entrPag)}</select></label>
   <label>Nº de parcelas do carnê<select id="edparc">${Array.from({length:36},(_,i)=>`<option value="${i+1}" ${EP.parc===i+1?'selected':''}>${i+1}x</option>`).join('')}</select></label>
   <label>1º vencimento<input id="edv1" type="date" value="${EP.v1||''}"></label>`:''}
  </div>
  ${EP.pag==='Dividido'?spUI('e',edTot()):''}
- ${ncar&&(S.sales.find(x=>x.id===EP.id).parcs||[]).some(p=>p.pago||p.vp)?`<div class="mut" style="margin-top:8px">Esse carnê já tem parcela paga. As pagas ficam como estão e só as que faltam são refeitas.</div>`:''}
- <div id="edsum" style="margin-top:12px"></div>
- <h3 style="margin:16px 0 8px;font-size:14px">Entrega</h3>
- <div class="f"><label class="w">Como o cliente recebe<select id="edet" onchange="drawEdit()">${opt([['ret','Retirou na loja'],['ent','Entrega na casa do cliente']],EP.et)}</select></label></div>
- ${EP.et==='ent'?`<div class="f" style="margin-top:8px"><label>Cidade<select id="edec">${opt(CIDADES,EP.ec)}</select></label><label>Data<input id="eded" type="date" value="${EP.ed||''}"></label><label class="w">Endereço<input id="edee" value="${H(EP.ee||'')}"></label><label class="w">Situação<select id="edes">${opt([['Agendada','A entregar'],['Entregue','Já entregue']],EP.es||'Agendada')}</select></label></div>`:''}
- <div class="f" style="margin-top:10px"><label class="w">Observação<textarea id="edobs" rows="2">${H(EP.obs||'')}</textarea></label></div>
- ${acts('doEdit()')}`,true);edSum()}
+ <div id="edsum"></div>
+ ${ncar&&temPago?`<div class="enote">Esse carnê já tem pagamento. O que já foi pago fica como está; só o que falta é refeito.</div>`:''}
+ </section>
+ <section class="eds"><h3>Entrega</h3><div class="f">
+  <label class="w">Como o cliente recebe<select id="edet" onchange="drawEdit()">${opt([['ret','Retirou na loja'],['ent','Entrega na casa do cliente']],EP.et)}</select></label>
+  ${EP.et==='ent'?`<label>Cidade<select id="edec">${opt(CIDADES,EP.ec)}</select></label><label>Data da entrega<input id="eded" type="date" value="${EP.ed||''}"></label>
+  <label>Rua<input id="edr" value="${H(ea.r)}" placeholder="Ex.: Rua das Flores"></label><label>Número<input id="ednu" value="${H(ea.nu)}" placeholder="123"></label>
+  <label>Bairro<input id="edba" value="${H(ea.b)}" placeholder="Ex.: Centro"></label><label>Complemento<input id="edco" value="${H(ea.co)}" placeholder="Casa 2, apto 31"></label>
+  <label class="w">Ponto de referência<input id="edrf" value="${H(ea.ref)}" placeholder="Ex.: em frente à padaria"></label>
+  <label class="w">Situação<select id="edes">${opt([['Agendada','A entregar'],['Entregue','Já entregue']],EP.es||'Agendada')}</select></label>`:''}
+ </div></section>
+ <section class="eds"><h3>Observação</h3><textarea id="edobs" rows="2" aria-label="Observação" placeholder="Sai na via do cliente. Ex.: cor branca, montagem inclusa">${H(EP.obs||'')}</textarea></section>
+ </div>
+ <div class="edfoot"><button class="btn light" onclick="close_()">Cancelar</button><button class="btn dark" onclick="doEdit()">Salvar alterações</button></div>`,true);edSum()}
 function doEdit(){edRead();const s=S.sales.find(x=>x.id===EP.id);if(!s)return;
  const its=EP.items.filter(i=>i.prod&&+i.q>0);if(!its.length)return toast('Coloca pelo menos um produto');
  const tot=edTot();if(tot<0)return toast('O desconto está maior que o total');
  const carne=EP.pag==='Carnê',entr=carne?Math.min(+EP.entr||0,tot):0;
  if(EP.pag==='Dividido'){const e=spOk(EP.pags,tot);if(e)return toast(e,5000)}
- const velhas=s.parcs||[],pagas=velhas.filter(p=>p.pago||p.vp);
+ const velhas=s.parcs||[],ultPg=[...S.cpag.filter(x=>x.vid===s.id).map(x=>x.d)].sort().pop()||hoje();
+ // só conta o que foi pago de verdade: parcela paga em parte vira parcela do valor pago, o resto volta para o saldo
+ const pagas=velhas.filter(p=>!p.canc&&paidOf(p)>0.004).map(p=>{const pg=r2(paidOf(p));return pg<p.v-0.004?{...p,v:pg,vp:pg,pago:p.pago||ultPg}:p});
  if(!carne&&s.pag==='Carnê'&&pagas.length)return toast('Esse carnê já tem parcela paga, então não dá pra trocar a forma de pagamento');
  // estoque: devolve o que saiu e tira o novo
  const dq={};s.items.forEach(i=>dq[i.prod]=(dq[i.prod]||0)+(+i.q||0));its.forEach(i=>dq[i.prod]=(dq[i.prod]||0)-(+i.q||0));
@@ -1169,7 +1205,7 @@ function doEdit(){edRead();const s=S.sales.find(x=>x.id===EP.id);if(!s)return;
   s.entr=entr;s.entrPag=EP.entrPag;
   const mudou=antes.v!==tot||antes.pag!=='Carnê'||antes.entr!==entr||antes.np!==EP.parc||antes.v1!==EP.v1;
   if(mudou||!velhas.length){
-   const resto=r2(tot-entr),jaPago=r2(pagas.reduce((a,p)=>a+p.v,0)),falta=r2(resto-jaPago);
+   const resto=r2(tot-entr),jaPago=r2(pagas.reduce((a,p)=>a+paidOf(p),0)),falta=r2(resto-jaPago);
    let novas=[];if(falta>0.004){const n=Math.max(1,EP.parc-pagas.length);novas=genParcs(falta,n,EP.v1).map((p,j)=>({...p,k:pagas.length+j+1}))}
    s.parcs=[...pagas,...novas]
   }
@@ -2116,7 +2152,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611231030';
+const APP_VER='202611231040';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
