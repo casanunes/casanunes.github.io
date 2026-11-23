@@ -1465,16 +1465,16 @@ V.fluxo=()=>{
  const tile=(l,v,d,k,acc)=>`<div class="tile ${acc?'acc':''}"><div class="th"><span>${l}</span><i>${ic(k,'width:16px;height:16px')}</i></div><div><div class="tv">${v}</div><div class="td">${d}</div></div></div>`;
  const ks=Array.from({length:12},(_,i)=>mk(i)),car={},crt={};let atras=0;ks.forEach(k=>{car[k]=0;crt[k]=0});
  S.sales.filter(s=>!s.canc).forEach(s=>{
-  if(s.pag==='Carnê')(s.parcs||[]).forEach(p=>{if(p.canc)return;const r=prem(p);if(r<=0)return;let k=p.venc.slice(0,7);if(k<k0){atras+=r;k=k0}if(car[k]!==undefined)car[k]+=r});
+  if(s.pag==='Carnê'&&s.parcs&&s.parcs.length){const x=carInfo(s);let rest=x.falta,i=1;const pv=x.pv>0?x.pv:rest;while(rest>0.004&&i<ks.length){const v=Math.min(pv,rest);car[ks[i]]+=v;rest=r2(rest-v);i++}}
   cartaoParcelas(s).forEach(c=>{if(c.k>=k0&&crt[c.k]!==undefined)crt[c.k]+=c.v})});
  const sal=S.vend.reduce((a,v)=>a+(+v.sal||0),0),fxm=S.exp.filter(e=>e.t==='Fixa'&&inM(e,k0)).reduce((a,e)=>a+e.v,0),saidas=sal+fxm;
  let acc=0;const rows=ks.map(k=>{const ent=car[k]+crt[k],sd=ent-saidas;acc+=sd;return `<tr><td><b>${MESL[+k.slice(5)-1]}/${k.slice(2,4)}</b>${k===k0?' <span class="chip">este mês</span>':''}</td><td class="r">${R(car[k])}</td><td class="r">${R(crt[k])}</td><td class="r"><b>${R(ent)}</b></td><td class="r">- ${R(saidas)}</td><td class="r" style="color:var(${sd<0?'--bad':'--ok'})"><b>${R(sd)}</b></td><td class="r">${R(acc)}</td></tr>`}).join('');
  const tot=ks.reduce((a,k)=>a+car[k]+crt[k],0);
  return head('Fluxo de caixa','Quando o dinheiro realmente entra, mês a mês (só o administrador vê)','<div></div>')+`<div class="k6">
-  ${tile('Entrou este mês',R(recebido(k0,'Todas',true)),'dinheiro que já entrou em '+MESL[+k0.slice(5)-1],'coins',true)}${tile('A receber em 12 meses',R(tot),'carnês + cartão de crédito','trend')}${tile('Carnês atrasados',R(atras),'já venceram e ainda não foram pagos','clock')}${tile('Saída fixa por mês',R(saidas),'salários + despesas fixas do mês','wallet')}</div>
+  ${tile('Entrou este mês',R(recebido(k0,'Todas',true)),'dinheiro que já entrou em '+MESL[+k0.slice(5)-1],'coins',true)}${tile('A receber em 12 meses',R(tot),'carnês + cartão de crédito','trend')}${tile('Saída fixa por mês',R(saidas),'salários + despesas fixas do mês','wallet')}</div>
   <div class="card mt"><div class="ct"><div><h3>Previsão dos próximos 12 meses</h3><p>Cada parcela cai no mês em que o dinheiro entra de verdade</p></div></div>
   <div class="tw"><table><tr><th>Mês</th><th class="r">Carnês</th><th class="r">Cartão de crédito</th><th class="r">Total que entra</th><th class="r">Saídas fixas</th><th class="r">Sobra no mês</th><th class="r">Acumulado</th></tr>${rows}</table></div>
-  <p class="mut" style="margin:12px 4px 0">Carnês atrasados entram no mês atual. O cartão de crédito cai parcela por parcela, já descontada a taxa. Pix, dinheiro e débito entram na hora. As saídas contam só salários e despesas fixas lançadas neste mês; comissões, despesas variáveis e compra de mercadoria não entram na conta.</p></div>`};
+  <p class="mut" style="margin:12px 4px 0">Carnês: o saldo de cada cliente entra mês a mês pelo valor da parcela combinada, a partir do mês que vem. O cartão de crédito cai parcela por parcela, já descontada a taxa. Pix, dinheiro e débito entram na hora. As saídas contam só salários e despesas fixas lançadas neste mês; comissões, despesas variáveis e compra de mercadoria não entram na conta.</p></div>`};
 // ---------- imposto (DAS · Simples Nacional, Anexo I) · só Administração ----------
 let DAS=null,DASL=0,DASALL=0;
 const dasOk=()=>isAdm()&&!SL;
@@ -2152,7 +2152,7 @@ const h0=(location.hash||'').slice(1);if([...TABS,['fluxo'],['admin'],['ajustes'
  render()})();
 
 // ---------- app instalável + sempre atualizado ----------
-const APP_VER='202611231040';
+const APP_VER='202611231045';
 let DEFER=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFER=e;$('inst').style.display='block'});
 $('inst').onclick=async()=>{if(!DEFER)return;DEFER.prompt();await DEFER.userChoice;DEFER=null;$('inst').style.display='none'};
